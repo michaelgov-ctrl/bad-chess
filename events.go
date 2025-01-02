@@ -10,9 +10,10 @@ type Event struct {
 type EventHandler func(event Event, c *Client) error
 
 const (
-	EventMakeMove      = "make_move"
-	EventPropagateMove = "propagate_move"
-	EventMatchError    = "match_error"
+	EventMakeMove        = "make_move"
+	EventMatchError      = "match_error"
+	EventNewMatchRequest = "new_match"
+	EventPropagateMove   = "propagate_move"
 )
 
 type MakeMoveEvent struct {

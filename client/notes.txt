@@ -1,1 +1,3 @@
-{"move":"e4","player":"white"}
+{"type":"make_move","payload":{"move":"e4","player":"white"}}
+
+{"type":"new_match"}

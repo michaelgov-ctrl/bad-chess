@@ -53,12 +53,12 @@ func main() {
 			continue
 		}
 
-		message := fmt.Sprintf(`{"type":"make_move","payload":%s}`, input)
-		err = conn.WriteMessage(websocket.TextMessage, []byte(message))
+		//message := fmt.Sprintf(`{"type":"make_move","payload":%s}`, input)
+		err = conn.WriteMessage(websocket.TextMessage, []byte(input))
 		if err != nil {
 			log.Fatalf("failed to send message: %v", err)
 		}
-		log.Printf("sent: %s\n", message)
+		log.Printf("sent: %s\n", input)
 
 	}
 
