@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -28,23 +29,27 @@ var (
 
 type Manager struct {
 	sync.RWMutex
+	logger *slog.Logger
 
 	clients ClientList
-
-	matches          MatchList
-	matchCleanupChan chan MatchId
+	//matches          MatchList
+	matches          TimeControlMatchList
+	matchCleanupChan chan ClientMatchInfo
 
 	handlers map[string]EventHandler
 }
 
 func NewManager(ctx context.Context) *Manager {
 	m := &Manager{
-		clients:          make(ClientList),
-		matches:          make(MatchList),
-		matchCleanupChan: make(chan MatchId),
+		logger:  slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		clients: make(ClientList),
+		//matches:          make(MatchList),
+		matches:          make(TimeControlMatchList),
+		matchCleanupChan: make(chan ClientMatchInfo),
 		handlers:         make(map[string]EventHandler),
 	}
 
+	m.registerSupportedTimeControls()
 	m.registerEventHandlers()
 	go m.cleanupMatches()
 
@@ -52,8 +57,14 @@ func NewManager(ctx context.Context) *Manager {
 }
 
 func (m *Manager) registerEventHandlers() {
-	m.handlers[EventNewMatchRequest] = m.MatchMakingHandler
+	m.handlers[EventJoinMatchRequest] = m.MatchMakingHandler
 	m.handlers[EventMakeMove] = m.MakeMoveHandler
+}
+
+func (m *Manager) registerSupportedTimeControls() {
+	for tc, _ := range SupportedTimeControls {
+		m.matches[tc] = make(MatchList)
+	}
 }
 
 func (m *Manager) addClient(c *Client) {
@@ -74,21 +85,20 @@ func (m *Manager) removeClient(c *Client) {
 }
 
 func (m *Manager) serveWS(w http.ResponseWriter, r *http.Request) {
-	log.Println("new connection from", r.RemoteAddr)
+	m.logger.Info("new connection", "origin", r.RemoteAddr)
 
 	conn, err := websocketUpgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
+		m.logger.Error(err.Error())
 		return
 	}
 
 	client := NewClient(conn, m)
 
 	m.addClient(client)
-	//m.matchMaking(client)
 
-	go client.readEvents()
-	go client.writeEvents()
+	go client.readEvents(m.logger)
+	go client.writeEvents(m.logger)
 }
 
 func (m *Manager) routeEvent(event Event, c *Client) error {
@@ -105,19 +115,20 @@ func (m *Manager) routeEvent(event Event, c *Client) error {
 }
 
 func (m *Manager) cleanupMatches() {
-	cleanupTime, finishedMatches := time.NewTicker(5*time.Second), []MatchId{}
+	cleanupTime, finishedMatches := time.NewTicker(5*time.Second), []ClientMatchInfo{}
 	for {
 		select {
-		case id, ok := <-m.matchCleanupChan:
+		case matchInfo, ok := <-m.matchCleanupChan:
 			if !ok {
 				panic("manager match cleanup channel broken")
 			}
 
-			finishedMatches = append(finishedMatches, id)
+			finishedMatches = append(finishedMatches, matchInfo)
 		case <-cleanupTime.C:
 			m.Lock()
-			for _, id := range finishedMatches {
-				delete(m.matches, id)
+			for _, finishedMatch := range finishedMatches {
+				m.logger.Info("removing match from manager", "match info", finishedMatch)
+				delete(m.matches[finishedMatch.TimeControl], finishedMatch.ID)
 			}
 			m.Unlock()
 

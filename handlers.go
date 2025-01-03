@@ -4,40 +4,47 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/google/uuid"
+	"github.com/notnil/chess"
 )
 
 func (m *Manager) MatchMakingHandler(event Event, c *Client) error {
-	fmt.Printf("event: %v\nclient: %v\n", event, *c)
+	m.logger.Info("match making handler", "event", event, "client", *c)
+
+	var joinEvent JoinMatchEvent
+	if err := json.Unmarshal(event.Payload, &joinEvent); err != nil {
+		return fmt.Errorf("bad payload in request: %v", err)
+	}
 
 	// this is probably slow
 	m.Lock()
 	defer m.Unlock()
-	for matchId, match := range m.matches {
-		if match.LightPlayer == nil {
-			m.matches[matchId].LightPlayer = c
-			c.match = matchId
-			return nil
-		}
-
+	for matchId, match := range m.matches[joinEvent.TimeControl] {
+		// no created match should ever be missing a light player since theyre added at creation
 		if match.DarkPlayer == nil {
-			m.matches[matchId].DarkPlayer = c
-			c.match = matchId
+			m.matches[joinEvent.TimeControl][matchId].DarkPlayer = c
+			c.currentMatch = ClientMatchInfo{
+				ID:          matchId,
+				TimeControl: joinEvent.TimeControl,
+				Pieces:      Dark,
+			}
 			return nil
 		}
 	}
 
-	matchId := m.newMatch()
-	m.matches[matchId].LightPlayer = c
-	c.match = matchId
-
+	matchId := m.newMatch(joinEvent.TimeControl)
+	m.matches[joinEvent.TimeControl][matchId].LightPlayer = c
+	c.currentMatch = ClientMatchInfo{
+		ID:          matchId,
+		TimeControl: joinEvent.TimeControl,
+		Pieces:      Light,
+	}
 	return nil
 }
 
 func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
-	fmt.Printf("event: %v\nclient: %v\n", event, *c)
+	m.logger.Info("make move handler", "event", event, "client", *c)
 
 	var moveEvent MakeMoveEvent
 	if err := json.Unmarshal(event.Payload, &moveEvent); err != nil {
@@ -64,9 +71,9 @@ func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
 
 	m.Lock()
 	defer m.Unlock()
-	if match, ok := m.matches[c.match]; ok {
-		clientPlayerColor, err := match.ClientPlayerColor(c)
-		if err != nil {
+	if match, ok := m.matches[c.currentMatch.TimeControl][c.currentMatch.ID]; ok {
+		clientPlayerColor, err := match.ClientPieceColor(c)
+		if err != nil || clientPlayerColor != c.currentMatch.Pieces {
 			c.egress <- Event{
 				// TODO: payload should probably maybe be ErrorEvent
 				Payload: []byte(`{error:"no color assigned for this match"}`),
@@ -100,22 +107,24 @@ func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
 }
 
 // TODO: this is probably fine for now, consider tossing an error on collision & retrying
-func (m *Manager) newMatch() MatchId {
+func (m *Manager) newMatch(timeControl TimeControl) MatchId {
 	matchId := MatchId(uuid.NewString())
 
 	// right now newMatch() is only called in matchmaking which locks m
-	if _, ok := m.matches[matchId]; ok {
-		log.Println("uuid collision", matchId)
-		matchId = m.newMatch()
+	if _, ok := m.matches[timeControl][matchId]; ok {
+		m.logger.Error("uuid collision", "MatchId", matchId)
+		matchId = m.newMatch(timeControl)
 	} else {
 		match := &Match{
-			ID:        matchId,
-			ChessGame: newChessGame(),
+			ID:          matchId,
+			TimeControl: timeControl,
+			Game:        chess.NewGame(),
+			Turn:        Light,
 		}
 
 		go match.notifyWhenOver(m.matchCleanupChan)
 
-		m.matches[matchId] = match
+		m.matches[timeControl][matchId] = match
 	}
 
 	return matchId

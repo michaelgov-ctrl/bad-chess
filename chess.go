@@ -1,5 +1,6 @@
 package main
 
+/*
 import (
 	"fmt"
 	"os"
@@ -68,3 +69,4 @@ func (pc PlayerColor) String() string {
 
 	return "dark"
 }
+*/

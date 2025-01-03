@@ -2,8 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -18,13 +17,19 @@ type Client struct {
 	connection *websocket.Conn
 	manager    *Manager
 
-	match MatchId
+	currentMatch ClientMatchInfo
 
 	// egress is used to avoid concurrent writes on the websocket connection
 	egress chan Event
 }
 
 type ClientList map[*Client]bool
+
+type ClientMatchInfo struct {
+	ID          MatchId
+	TimeControl TimeControl
+	Pieces      PieceColor
+}
 
 func NewClient(conn *websocket.Conn, manager *Manager) *Client {
 	return &Client{
@@ -34,13 +39,13 @@ func NewClient(conn *websocket.Conn, manager *Manager) *Client {
 	}
 }
 
-func (c *Client) readEvents() {
+func (c *Client) readEvents(logger *slog.Logger) {
 	defer func() {
 		c.manager.removeClient(c)
 	}()
 
 	if err := c.connection.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
-		log.Println(err)
+		logger.Error(err.Error())
 		return
 	}
 
@@ -52,25 +57,25 @@ func (c *Client) readEvents() {
 		_, payload, err := c.connection.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error reading message: %v\n", err)
+				logger.Error("error reading message", "error", err)
 			}
 			break
 		}
 
 		var req Event
-		fmt.Println(string(payload))
+		logger.Info("payload", string(payload))
 		if err := json.Unmarshal(payload, &req); err != nil {
-			log.Printf("error marshalling event: %v\n", err)
+			logger.Error("error marshalling event", "error", err)
 			break
 		}
 
 		if err := c.manager.routeEvent(req, c); err != nil {
-			log.Printf("error handling message: %v\n", err)
+			logger.Error("error handling message", "error", err)
 		}
 	}
 }
 
-func (c *Client) writeEvents() {
+func (c *Client) writeEvents(logger *slog.Logger) {
 	defer func() {
 		c.manager.removeClient(c)
 	}()
@@ -84,28 +89,28 @@ func (c *Client) writeEvents() {
 			if !ok {
 				// if egress is broken notify client & close
 				if err := c.connection.WriteMessage(websocket.CloseMessage, nil); err != nil {
-					log.Println("connection closed: ", err)
+					logger.Error("connection closed", "error", err)
 				}
 				return
 			}
 
 			data, err := json.Marshal(message)
 			if err != nil {
-				log.Println(err)
+				logger.Error("error marshalling message", "error", err)
 				return
 			}
 
 			if err := c.connection.WriteMessage(websocket.TextMessage, data); err != nil {
-				log.Println("failed to send message: ", err)
+				logger.Error("failed to send message", "error", err)
 				return
 			}
 
-			log.Println("message sent")
+			logger.Info("message sent")
 		case <-ticker.C:
-			log.Println("ping")
+			//log.Println("ping")
 
 			if err := c.connection.WriteMessage(websocket.PingMessage, []byte(``)); err != nil {
-				log.Println("writemsg: ", err)
+				logger.Error("ping error: ", err)
 				return
 			}
 		}
@@ -113,6 +118,6 @@ func (c *Client) writeEvents() {
 }
 
 func (c *Client) pongHandler(pongMsg string) error {
-	log.Println("pong")
+	//log.Println("pong")
 	return c.connection.SetReadDeadline(time.Now().Add(pongWait))
 }

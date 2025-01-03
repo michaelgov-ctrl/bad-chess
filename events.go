@@ -10,11 +10,16 @@ type Event struct {
 type EventHandler func(event Event, c *Client) error
 
 const (
-	EventMakeMove        = "make_move"
-	EventMatchError      = "match_error"
-	EventNewMatchRequest = "new_match"
-	EventPropagateMove   = "propagate_move"
+	EventJoinMatchRequest = "join_match"
+	EventMakeMove         = "make_move"
+	EventMatchError       = "match_error"
+	EventNewMatchRequest  = "new_match"
+	EventPropagateMove    = "propagate_move"
 )
+
+type JoinMatchEvent struct {
+	TimeControl TimeControl `json:"time_control"`
+}
 
 type MakeMoveEvent struct {
 	Move   string `json:"move"`
