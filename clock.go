@@ -32,7 +32,7 @@ func NewClock(timeControl TimeControl) *Clock {
 		state:    running,
 	}
 
-	ticker := time.NewTicker(50 * time.Millisecond)
+	ticker := time.NewTicker(100 * time.Millisecond)
 	go func() {
 		for range ticker.C {
 			clock.Lock()

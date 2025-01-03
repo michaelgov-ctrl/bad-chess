@@ -27,7 +27,8 @@ type MakeMoveEvent struct {
 }
 
 type PropagateMoveEvent struct {
-	MakeMoveEvent
+	PlayerColor string `json:"player"`
+	MoveEvent   MakeMoveEvent
 }
 
 type ErrorEvent struct {

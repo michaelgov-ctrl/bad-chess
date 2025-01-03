@@ -28,6 +28,12 @@ const (
 	NoColor
 )
 
+const (
+	LightWon = "1-0"
+	DarkWon  = "0-1"
+	Draw     = "1/2-1/2"
+)
+
 type TimeControl time.Duration
 
 type MatchList map[MatchId]*Match
@@ -84,44 +90,55 @@ func (tc TimeControl) ToDuration() time.Duration {
 	return time.Duration(tc)
 }
 
-func (m *Match) ClientPieceColor(client *Client) (PieceColor, error) {
+func (m *Match) ClientPieceColor(client *Client) PieceColor {
 	if m.LightPlayer != nil && m.LightPlayer.Client == client {
-		return Light, nil
+		return Light
 	}
 
 	if m.DarkPlayer != nil && m.DarkPlayer.Client == client {
-		return Dark, nil
+		return Dark
 	}
 
-	return NoColor, errors.New("missing player")
+	return NoColor
 }
 
-func (m *Match) notifyWhenOver(ch chan<- ClientMatchInfo) {
-	started := time.Now()
-	waitTime := (m.TimeControl.ToDuration() * 2) + (15 * time.Second) // max wait time is for each players clock with a 15 second buffer
-	ticker := time.NewTicker(500 * time.Millisecond)
+type MatchOutcome struct {
+	ID          MatchId
+	TimeControl TimeControl
+	Outcome     string
+	Method      string
+}
 
+func (m *Match) notifyWhenOver(ch chan<- MatchOutcome) {
+	ticker := time.NewTicker(500 * time.Millisecond)
+	started, waitTime := time.Now(), (m.TimeControl.ToDuration()*2)+(15*time.Second) // max wait time is for each players clock with a 15 second buffer
+
+	var outcome = MatchOutcome{
+		ID:          m.ID,
+		TimeControl: m.TimeControl,
+	}
 OUTER:
 	for {
 		select {
 		case <-ticker.C:
-			if m.Game.Outcome() != chess.NoOutcome || time.Since(started) <= waitTime {
+			if m.Game.Outcome() != chess.NoOutcome || time.Since(started) >= waitTime {
+				outcome.Outcome = m.Game.Outcome().String()
+				outcome.Method = m.Game.Method().String()
 				break OUTER
 			}
-		case <-m.LightPlayer.Clock.Done:
-			log.Println("light player out of time")
+		case <-safePlayerClockChannel(m.LightPlayer):
+			outcome.Outcome = DarkWon
+			outcome.Method = "flagged"
 			break OUTER
-		case <-m.DarkPlayer.Clock.Done:
-			log.Printf("dark player out of time")
+		case <-safePlayerClockChannel(m.DarkPlayer):
+			outcome.Outcome = LightWon
+			outcome.Method = "flagged"
 			break OUTER
 		}
 	}
 
 	log.Println("signaling to close", m.ID)
-	ch <- ClientMatchInfo{
-		ID:          m.ID,
-		TimeControl: m.TimeControl,
-	}
+	ch <- outcome
 }
 
 func (m *Match) MakeMove(pieces PieceColor, move string) error {
@@ -133,9 +150,32 @@ func (m *Match) MakeMove(pieces PieceColor, move string) error {
 		return fmt.Errorf("invalid move: %w", err)
 	}
 
+	m.swapRunningClock(pieces)
 	m.Turn = oppositePlayer(pieces)
 
 	return nil
+}
+
+func (m *Match) swapRunningClock(pieces PieceColor) {
+	switch pieces {
+	case Light:
+		m.LightPlayer.Clock.Pause()
+		m.DarkPlayer.Clock.Start()
+	case Dark:
+		m.DarkPlayer.Clock.Pause()
+		m.LightPlayer.Clock.Start()
+	}
+}
+
+func (pc PieceColor) String() string {
+	switch pc {
+	case Light:
+		return "light"
+	case Dark:
+		return "dark"
+	default:
+		return "no_color"
+	}
 }
 
 func oppositePlayer(pieces PieceColor) PieceColor {
@@ -147,4 +187,12 @@ func oppositePlayer(pieces PieceColor) PieceColor {
 	default:
 		return NoColor
 	}
+}
+
+func safePlayerClockChannel(p *Player) <-chan time.Time {
+	if p == nil || p.Clock == nil {
+		return nil
+	}
+
+	return p.Clock.Done
 }

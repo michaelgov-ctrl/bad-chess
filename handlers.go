@@ -46,6 +46,12 @@ func (m *Manager) MatchMakingHandler(event Event, c *Client) error {
 		TimeControl: joinEvent.TimeControl,
 		Pieces:      Light,
 	}
+
+	/*
+		m.matches[joinEvent.TimeControl][matchId].DarkPlayer = &Player{
+			Clock: NewClock(joinEvent.TimeControl),
+		}
+	*/
 	return nil
 }
 
@@ -57,30 +63,31 @@ func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
 
-	propEvent := PropagateMoveEvent{
-		moveEvent,
-	}
-
-	data, err := json.Marshal(propEvent)
-	if err != nil {
-		return fmt.Errorf("failed to marshal propagation event: %v", err)
-	}
-
-	outgoingEvent := Event{
-		Payload: data,
-		Type:    EventPropagateMove,
-	}
-
 	m.Lock()
 	defer m.Unlock()
 	if match, ok := m.matches[c.currentMatch.TimeControl][c.currentMatch.ID]; ok {
-		clientPlayerColor, err := match.ClientPieceColor(c)
-		if err != nil || clientPlayerColor != c.currentMatch.Pieces {
-			return err
+		clientPlayerColor := match.ClientPieceColor(c)
+		if clientPlayerColor == NoColor || clientPlayerColor != c.currentMatch.Pieces {
+			return fmt.Errorf("player pieces are borked")
 		}
 
 		if err := match.MakeMove(c.currentMatch.Pieces, moveEvent.Move); err != nil {
 			return err
+		}
+
+		propEvent := PropagateMoveEvent{
+			PlayerColor: clientPlayerColor.String(),
+			MoveEvent:   moveEvent,
+		}
+
+		data, err := json.Marshal(propEvent)
+		if err != nil {
+			return fmt.Errorf("failed to marshal propagation event: %v", err)
+		}
+
+		outgoingEvent := Event{
+			Payload: data,
+			Type:    EventPropagateMove,
 		}
 
 		// send only to other player, should an accept be sent back to client?

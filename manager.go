@@ -34,7 +34,7 @@ type Manager struct {
 	clients ClientList
 	//matches          MatchList
 	matches          TimeControlMatchList
-	matchCleanupChan chan ClientMatchInfo
+	matchCleanupChan chan MatchOutcome
 
 	handlers map[string]EventHandler
 }
@@ -45,7 +45,7 @@ func NewManager(ctx context.Context) *Manager {
 		clients: make(ClientList),
 		//matches:          make(MatchList),
 		matches:          make(TimeControlMatchList),
-		matchCleanupChan: make(chan ClientMatchInfo),
+		matchCleanupChan: make(chan MatchOutcome),
 		handlers:         make(map[string]EventHandler),
 	}
 
@@ -115,7 +115,7 @@ func (m *Manager) routeEvent(event Event, c *Client) error {
 }
 
 func (m *Manager) cleanupMatches() {
-	cleanupTime, finishedMatches := time.NewTicker(5*time.Second), []ClientMatchInfo{}
+	cleanupTime, finishedMatches := time.NewTicker(5*time.Second), []MatchOutcome{}
 	for {
 		select {
 		case matchInfo, ok := <-m.matchCleanupChan:

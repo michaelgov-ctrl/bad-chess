@@ -74,7 +74,7 @@ func (c *Client) readEvents(logger *slog.Logger) {
 			logger.Error("error handling message", "error", err)
 			// TODO: switch on error types or otherwise handle them
 			c.egress <- Event{
-				Payload: []byte(fmt.Sprintf(`{error:"%v"}`, err)),
+				Payload: []byte(fmt.Sprintf(`{"error":"%v"}`, err)),
 				Type:    EventMatchError,
 			}
 		}
