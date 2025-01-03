@@ -110,7 +110,7 @@ func (m *Manager) cleanupMatches() {
 		select {
 		case id, ok := <-m.matchCleanupChan:
 			if !ok {
-				panic("manager match cleanup broken")
+				panic("manager match cleanup channel broken")
 			}
 
 			finishedMatches = append(finishedMatches, id)
