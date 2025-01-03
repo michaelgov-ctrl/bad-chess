@@ -22,8 +22,8 @@ type JoinMatchEvent struct {
 }
 
 type MakeMoveEvent struct {
-	Move   string `json:"move"`
-	Player string `json:"player"`
+	Move string `json:"move"`
+	//Player string `json:"player"`
 }
 
 type PropagateMoveEvent struct {

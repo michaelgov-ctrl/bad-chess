@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -32,6 +33,11 @@ type TimeControl time.Duration
 type MatchList map[MatchId]*Match
 
 type TimeControlMatchList map[TimeControl]MatchList
+
+type Player struct {
+	*Client
+	Clock *Clock
+}
 
 // TODO: Spectators  []*Client
 type Match struct {
@@ -101,5 +107,30 @@ func (m *Match) notifyWhenOver(ch chan<- ClientMatchInfo) {
 	ch <- ClientMatchInfo{
 		ID:          m.ID,
 		TimeControl: m.TimeControl,
+	}
+}
+
+func (m *Match) MakeMove(pieces PieceColor, move string) error {
+	if m.Turn != pieces {
+		return errors.New("not players turn")
+	}
+
+	if err := m.Game.MoveStr(move); err != nil {
+		return fmt.Errorf("invalid move: %w", err)
+	}
+
+	m.Turn = oppositePlayer(pieces)
+
+	return nil
+}
+
+func oppositePlayer(pieces PieceColor) PieceColor {
+	switch pieces {
+	case Light:
+		return Dark
+	case Dark:
+		return Light
+	default:
+		return NoColor
 	}
 }

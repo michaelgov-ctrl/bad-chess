@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -63,7 +64,7 @@ func (c *Client) readEvents(logger *slog.Logger) {
 		}
 
 		var req Event
-		logger.Info("payload", string(payload))
+		logger.Info("received payload", "payload", string(payload))
 		if err := json.Unmarshal(payload, &req); err != nil {
 			logger.Error("error marshalling event", "error", err)
 			break
@@ -71,6 +72,11 @@ func (c *Client) readEvents(logger *slog.Logger) {
 
 		if err := c.manager.routeEvent(req, c); err != nil {
 			logger.Error("error handling message", "error", err)
+			// TODO: switch on error types or otherwise handle them
+			c.egress <- Event{
+				Payload: []byte(fmt.Sprintf(`{error:"%v"}`, err)),
+				Type:    EventMatchError,
+			}
 		}
 	}
 }
@@ -110,7 +116,7 @@ func (c *Client) writeEvents(logger *slog.Logger) {
 			//log.Println("ping")
 
 			if err := c.connection.WriteMessage(websocket.PingMessage, []byte(``)); err != nil {
-				logger.Error("ping error: ", err)
+				logger.Error("ping error", "error", err)
 				return
 			}
 		}

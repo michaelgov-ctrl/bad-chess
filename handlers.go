@@ -51,10 +51,6 @@ func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
 
-	//validate move & move in game as client
-	// *here*
-	//validate move & move in game as client
-
 	propEvent := PropagateMoveEvent{
 		moveEvent,
 	}
@@ -74,11 +70,10 @@ func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
 	if match, ok := m.matches[c.currentMatch.TimeControl][c.currentMatch.ID]; ok {
 		clientPlayerColor, err := match.ClientPieceColor(c)
 		if err != nil || clientPlayerColor != c.currentMatch.Pieces {
-			c.egress <- Event{
-				// TODO: payload should probably maybe be ErrorEvent
-				Payload: []byte(`{error:"no color assigned for this match"}`),
-				Type:    EventMatchError,
-			}
+			return err
+		}
+
+		if err := match.MakeMove(c.currentMatch.Pieces, moveEvent.Move); err != nil {
 			return err
 		}
 
@@ -95,11 +90,6 @@ func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
 			}
 		}
 	} else {
-		c.egress <- Event{
-			// TODO: payload should probably maybe be ErrorEvent
-			Payload: []byte(`{error:"client not assigned a match"}`),
-			Type:    EventMatchError,
-		}
 		return errors.New("no match")
 	}
 
