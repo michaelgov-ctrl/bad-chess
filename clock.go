@@ -15,7 +15,7 @@ const (
 
 type Clock struct {
 	sync.Mutex
-	Done     chan<- struct{}
+	Done     <-chan time.Time
 	lifeTime time.Duration
 	started  time.Time
 	elapsed  time.Duration
@@ -23,29 +23,30 @@ type Clock struct {
 }
 
 func NewClock(timeControl TimeControl) *Clock {
+	doneChan := make(chan time.Time)
+
 	clock := &Clock{
-		Done:     make(chan<- struct{}),
+		Done:     doneChan,
 		lifeTime: time.Duration(timeControl),
 		started:  time.Now(),
 		state:    running,
 	}
 
-	go clock.init()
+	ticker := time.NewTicker(50 * time.Millisecond)
+	go func() {
+		for range ticker.C {
+			clock.Lock()
+			if clock.lifeTime <= (clock.elapsed + time.Since(clock.started)) {
+				clock.state = expired
+				doneChan <- time.Now()
+				close(doneChan)
+				return
+			}
+			clock.Unlock()
+		}
+	}()
 
 	return clock
-}
-
-func (c *Clock) init() {
-	ticker := time.NewTicker(50 * time.Millisecond)
-	for range ticker.C {
-		c.Lock()
-		if c.lifeTime <= (c.elapsed + time.Since(c.started)) {
-			c.state = expired
-			close(c.Done)
-			return
-		}
-		c.Unlock()
-	}
 }
 
 func (c *Clock) Pause() {

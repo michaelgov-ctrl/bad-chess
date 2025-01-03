@@ -35,8 +35,8 @@ type MatchList map[MatchId]*Match
 type TimeControlMatchList map[TimeControl]MatchList
 
 type Player struct {
-	*Client
-	Clock *Clock
+	Client *Client
+	Clock  *Clock
 }
 
 // TODO: Spectators  []*Client
@@ -45,8 +45,8 @@ type Match struct {
 
 	TimeControl TimeControl
 
-	LightPlayer *Client
-	DarkPlayer  *Client
+	LightPlayer *Player
+	DarkPlayer  *Player
 
 	Game *chess.Game
 	Turn PieceColor
@@ -85,11 +85,11 @@ func (tc TimeControl) ToDuration() time.Duration {
 }
 
 func (m *Match) ClientPieceColor(client *Client) (PieceColor, error) {
-	if m.LightPlayer != nil && m.LightPlayer == client {
+	if m.LightPlayer != nil && m.LightPlayer.Client == client {
 		return Light, nil
 	}
 
-	if m.DarkPlayer != nil && m.DarkPlayer == client {
+	if m.DarkPlayer != nil && m.DarkPlayer.Client == client {
 		return Dark, nil
 	}
 
@@ -99,8 +99,22 @@ func (m *Match) ClientPieceColor(client *Client) (PieceColor, error) {
 func (m *Match) notifyWhenOver(ch chan<- ClientMatchInfo) {
 	started := time.Now()
 	waitTime := (m.TimeControl.ToDuration() * 2) + (15 * time.Second) // max wait time is for each players clock with a 15 second buffer
-	for m.Game.Outcome() == chess.NoOutcome && time.Since(started) <= waitTime {
-		time.Sleep(500 * time.Millisecond)
+	ticker := time.NewTicker(500 * time.Millisecond)
+
+OUTER:
+	for {
+		select {
+		case <-ticker.C:
+			if m.Game.Outcome() != chess.NoOutcome || time.Since(started) <= waitTime {
+				break OUTER
+			}
+		case <-m.LightPlayer.Clock.Done:
+			log.Println("light player out of time")
+			break OUTER
+		case <-m.DarkPlayer.Clock.Done:
+			log.Printf("dark player out of time")
+			break OUTER
+		}
 	}
 
 	log.Println("signaling to close", m.ID)

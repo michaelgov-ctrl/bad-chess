@@ -23,7 +23,10 @@ func (m *Manager) MatchMakingHandler(event Event, c *Client) error {
 	for matchId, match := range m.matches[joinEvent.TimeControl] {
 		// no created match should ever be missing a light player since theyre added at creation
 		if match.DarkPlayer == nil {
-			m.matches[joinEvent.TimeControl][matchId].DarkPlayer = c
+			m.matches[joinEvent.TimeControl][matchId].DarkPlayer = &Player{
+				Client: c,
+				Clock:  NewClock(joinEvent.TimeControl),
+			}
 			c.currentMatch = ClientMatchInfo{
 				ID:          matchId,
 				TimeControl: joinEvent.TimeControl,
@@ -34,7 +37,10 @@ func (m *Manager) MatchMakingHandler(event Event, c *Client) error {
 	}
 
 	matchId := m.newMatch(joinEvent.TimeControl)
-	m.matches[joinEvent.TimeControl][matchId].LightPlayer = c
+	m.matches[joinEvent.TimeControl][matchId].LightPlayer = &Player{
+		Client: c,
+		Clock:  NewClock(joinEvent.TimeControl),
+	}
 	c.currentMatch = ClientMatchInfo{
 		ID:          matchId,
 		TimeControl: joinEvent.TimeControl,
@@ -82,11 +88,11 @@ func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
 		switch clientPlayerColor {
 		case Light:
 			if match.DarkPlayer != nil {
-				match.DarkPlayer.egress <- outgoingEvent
+				match.DarkPlayer.Client.egress <- outgoingEvent
 			}
 		case Dark:
 			if match.LightPlayer != nil {
-				match.LightPlayer.egress <- outgoingEvent
+				match.LightPlayer.Client.egress <- outgoingEvent
 			}
 		}
 	} else {
