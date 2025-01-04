@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/notnil/chess"
@@ -12,6 +11,7 @@ import (
 
 var (
 	SupportedTimeControls = map[TimeControl]bool{
+		TimeControl(1 * float64(time.Minute)):  true, // 1 minute
 		TimeControl(5 * float64(time.Minute)):  true, // 5 minutes
 		TimeControl(10 * float64(time.Minute)): true, // 10 minutes
 		TimeControl(20 * float64(time.Minute)): true, // 20 minutes
@@ -45,6 +45,14 @@ type Player struct {
 	Clock  *Clock
 }
 
+type MatchState int
+
+const (
+	Waiting MatchState = iota
+	Started
+	Over
+)
+
 // TODO: Spectators  []*Client
 type Match struct {
 	ID MatchId
@@ -56,6 +64,8 @@ type Match struct {
 
 	Game *chess.Game
 	Turn PieceColor
+
+	State MatchState
 }
 
 func (tc TimeControl) MarshalJSON() ([]byte, error) {
@@ -109,21 +119,39 @@ type MatchOutcome struct {
 	Method      string
 }
 
-func (m *Match) notifyWhenOver(ch chan<- MatchOutcome) {
-	ticker := time.NewTicker(500 * time.Millisecond)
-	started, waitTime := time.Now(), (m.TimeControl.ToDuration()*2)+(15*time.Second) // max wait time is for each players clock with a 15 second buffer
-
-	var outcome = MatchOutcome{
-		ID:          m.ID,
-		TimeControl: m.TimeControl,
+func (m *Match) Start(cleanupChan chan<- MatchOutcome) error {
+	var outcome = MatchOutcome{ID: m.ID, TimeControl: m.TimeControl}
+	if m.LightPlayer == nil || m.DarkPlayer == nil {
+		outcome.Outcome = "0-0"
+		outcome.Method = "abandonment"
+		cleanupChan <- outcome
+		return fmt.Errorf("failed to start match")
 	}
+
+	go m.notifyWhenOver(cleanupChan)
+
+	m.State = Started
+	m.LightPlayer.Clock = NewClock(m.TimeControl)
+	m.DarkPlayer.Clock = NewClock(m.TimeControl)
+
+	return nil
+}
+
+func (m *Match) notifyWhenOver(cleanupChan chan<- MatchOutcome) {
+	var outcome = MatchOutcome{ID: m.ID, TimeControl: m.TimeControl}
+
+	ticker := time.NewTicker(500 * time.Millisecond)
 OUTER:
 	for {
 		select {
 		case <-ticker.C:
-			if m.Game.Outcome() != chess.NoOutcome || time.Since(started) >= waitTime {
+			if m.Game.Outcome() != chess.NoOutcome {
 				outcome.Outcome = m.Game.Outcome().String()
 				outcome.Method = m.Game.Method().String()
+				break OUTER
+			}
+			if m.State != Started {
+				outcome.Outcome = "abandoned"
 				break OUTER
 			}
 		case <-safePlayerClockChannel(m.LightPlayer):
@@ -137,8 +165,31 @@ OUTER:
 		}
 	}
 
-	log.Println("signaling to close", m.ID)
-	ch <- outcome
+	m.State = Over
+	cleanupChan <- outcome
+}
+
+func (m *Match) notifyIfStale(cleanupChan chan<- MatchOutcome) {
+	ticker := time.NewTicker(500 * time.Millisecond)
+	startTime, waitTime := time.Now(), (m.TimeControl.ToDuration()*2)+(30*time.Second) // max wait time is for each players clock with a 30 second buffer
+
+	outcome := MatchOutcome{
+		ID:          m.ID,
+		TimeControl: m.TimeControl,
+		Outcome:     "abandoned",
+	}
+
+	for range ticker.C {
+		if time.Since(startTime) >= 20*time.Second && m.State == Waiting { // if the match hasnt started after 20 seconds kill it
+			cleanupChan <- outcome
+			return
+		}
+
+		if time.Since(startTime) >= waitTime && m.State != Over {
+			cleanupChan <- outcome
+			return
+		}
+	}
 }
 
 func (m *Match) MakeMove(pieces PieceColor, move string) error {
@@ -195,4 +246,19 @@ func safePlayerClockChannel(p *Player) <-chan time.Time {
 	}
 
 	return p.Clock.Done
+}
+
+func (m *Match) MessagePlayers(event Event, players ...PieceColor) {
+	for _, color := range players {
+		switch color {
+		case Light:
+			if m.LightPlayer.Client != nil {
+				m.LightPlayer.Client.egress <- event
+			}
+		case Dark:
+			if m.DarkPlayer.Client != nil {
+				m.DarkPlayer.Client.egress <- event
+			}
+		}
+	}
 }

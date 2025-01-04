@@ -23,24 +23,20 @@ func (m *Manager) MatchMakingHandler(event Event, c *Client) error {
 	for matchId, match := range m.matches[joinEvent.TimeControl] {
 		// no created match should ever be missing a light player since theyre added at creation
 		if match.DarkPlayer == nil {
-			m.matches[joinEvent.TimeControl][matchId].DarkPlayer = &Player{
-				Client: c,
-				Clock:  NewClock(joinEvent.TimeControl),
-			}
+			m.matches[joinEvent.TimeControl][matchId].DarkPlayer = &Player{Client: c}
 			c.currentMatch = ClientMatchInfo{
 				ID:          matchId,
 				TimeControl: joinEvent.TimeControl,
 				Pieces:      Dark,
 			}
-			return nil
+
+			// both players should now be present to start game
+			return match.Start(m.matchCleanupChan)
 		}
 	}
 
 	matchId := m.newMatch(joinEvent.TimeControl)
-	m.matches[joinEvent.TimeControl][matchId].LightPlayer = &Player{
-		Client: c,
-		Clock:  NewClock(joinEvent.TimeControl),
-	}
+	m.matches[joinEvent.TimeControl][matchId].LightPlayer = &Player{Client: c}
 	c.currentMatch = ClientMatchInfo{
 		ID:          matchId,
 		TimeControl: joinEvent.TimeControl,
@@ -92,16 +88,19 @@ func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
 
 		// send only to other player, should an accept be sent back to client?
 		// egress is handled in (c *Client) writeMessages()
-		switch clientPlayerColor {
-		case Light:
-			if match.DarkPlayer != nil {
-				match.DarkPlayer.Client.egress <- outgoingEvent
+		match.MessagePlayers(outgoingEvent, oppositePlayer(clientPlayerColor))
+		/*
+			switch clientPlayerColor {
+			case Light:
+				if match.DarkPlayer != nil {
+					match.DarkPlayer.Client.egress <- outgoingEvent
+				}
+			case Dark:
+				if match.LightPlayer != nil {
+					match.LightPlayer.Client.egress <- outgoingEvent
+				}
 			}
-		case Dark:
-			if match.LightPlayer != nil {
-				match.LightPlayer.Client.egress <- outgoingEvent
-			}
-		}
+		*/
 	} else {
 		return errors.New("no match")
 	}
@@ -123,9 +122,10 @@ func (m *Manager) newMatch(timeControl TimeControl) MatchId {
 			TimeControl: timeControl,
 			Game:        chess.NewGame(),
 			Turn:        Light,
+			State:       Waiting,
 		}
 
-		go match.notifyWhenOver(m.matchCleanupChan)
+		go match.notifyIfStale(m.matchCleanupChan)
 
 		m.matches[timeControl][matchId] = match
 	}

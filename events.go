@@ -10,6 +10,7 @@ type Event struct {
 type EventHandler func(event Event, c *Client) error
 
 const (
+	EventMatchOver        = "match_over"
 	EventJoinMatchRequest = "join_match"
 	EventMakeMove         = "make_move"
 	EventMatchError       = "match_error"
