@@ -27,9 +27,9 @@ type Client struct {
 type ClientList map[*Client]bool
 
 type ClientMatchInfo struct {
-	ID          MatchId
-	TimeControl TimeControl
-	Pieces      PieceColor
+	ID          MatchId     `json:"match_id"`
+	TimeControl TimeControl `json:"time_control"`
+	Pieces      PieceColor  `json:"pieces"`
 }
 
 func NewClient(conn *websocket.Conn, manager *Manager) *Client {

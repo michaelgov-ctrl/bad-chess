@@ -1,6 +1,9 @@
 package main
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type Event struct {
 	Type    string          `json:"type"`
@@ -10,7 +13,9 @@ type Event struct {
 type EventHandler func(event Event, c *Client) error
 
 const (
+	EventAssignedMatch    = "assigned_match"
 	EventMatchOver        = "match_over"
+	EventMatchStarted     = "match_started"
 	EventJoinMatchRequest = "join_match"
 	EventMakeMove         = "make_move"
 	EventMatchError       = "match_error"
@@ -34,6 +39,20 @@ type PropagateMoveEvent struct {
 
 type ErrorEvent struct {
 	Error string `json:"error"`
+}
+
+func NewOutgoingEvent(t string, evt any) (Event, error) {
+	data, err := json.Marshal(evt)
+	if err != nil {
+		return Event{}, fmt.Errorf("failed to marshal event: %v: %v", evt, err)
+	}
+
+	out := Event{
+		Payload: data,
+		Type:    t,
+	}
+
+	return out, nil
 }
 
 func NewErrorToEvent(errorType, msg string) (*Event, error) {

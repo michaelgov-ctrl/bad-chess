@@ -17,17 +17,20 @@ func (m *Manager) MatchMakingHandler(event Event, c *Client) error {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
 
+	c.currentMatch.TimeControl = joinEvent.TimeControl
+
 	// this is probably slow
-	m.Lock()
-	defer m.Unlock()
+	m.matchesMu.Lock()
+	defer m.matchesMu.Unlock()
 	for matchId, match := range m.matches[joinEvent.TimeControl] {
 		// no created match should ever be missing a light player since theyre added at creation
 		if match.DarkPlayer == nil {
 			m.matches[joinEvent.TimeControl][matchId].DarkPlayer = &Player{Client: c}
-			c.currentMatch = ClientMatchInfo{
-				ID:          matchId,
-				TimeControl: joinEvent.TimeControl,
-				Pieces:      Dark,
+			c.currentMatch.ID = matchId
+			c.currentMatch.Pieces = Dark
+			err := m.matchMakingAddClientToMatch(c)
+			if err != nil {
+				return err
 			}
 
 			// both players should now be present to start game
@@ -35,20 +38,10 @@ func (m *Manager) MatchMakingHandler(event Event, c *Client) error {
 		}
 	}
 
-	matchId := m.newMatch(joinEvent.TimeControl)
-	m.matches[joinEvent.TimeControl][matchId].LightPlayer = &Player{Client: c}
-	c.currentMatch = ClientMatchInfo{
-		ID:          matchId,
-		TimeControl: joinEvent.TimeControl,
-		Pieces:      Light,
-	}
-
-	/*
-		m.matches[joinEvent.TimeControl][matchId].DarkPlayer = &Player{
-			Clock: NewClock(joinEvent.TimeControl),
-		}
-	*/
-	return nil
+	c.currentMatch.ID = m.newMatch(joinEvent.TimeControl)
+	c.currentMatch.Pieces = Light
+	err := m.matchMakingAddClientToMatch(c)
+	return err
 }
 
 func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
@@ -59,8 +52,8 @@ func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
 
-	m.Lock()
-	defer m.Unlock()
+	m.matchesMu.RLock()
+	defer m.matchesMu.RUnlock()
 	if match, ok := m.matches[c.currentMatch.TimeControl][c.currentMatch.ID]; ok {
 		clientPlayerColor := match.ClientPieceColor(c)
 		if clientPlayerColor == NoColor || clientPlayerColor != c.currentMatch.Pieces {
@@ -71,19 +64,12 @@ func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
 			return err
 		}
 
-		propEvent := PropagateMoveEvent{
+		outgoingEvent, err := NewOutgoingEvent(EventPropagateMove, PropagateMoveEvent{
 			PlayerColor: clientPlayerColor.String(),
 			MoveEvent:   moveEvent,
-		}
-
-		data, err := json.Marshal(propEvent)
+		})
 		if err != nil {
-			return fmt.Errorf("failed to marshal propagation event: %v", err)
-		}
-
-		outgoingEvent := Event{
-			Payload: data,
-			Type:    EventPropagateMove,
+			return err
 		}
 
 		// send only to other player, should an accept be sent back to client?

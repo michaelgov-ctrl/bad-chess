@@ -28,12 +28,13 @@ var (
 )
 
 type Manager struct {
-	sync.RWMutex
 	logger *slog.Logger
 
-	clients ClientList
-	//matches          MatchList
+	clients   ClientList
+	clientsMu sync.RWMutex
+
 	matches          TimeControlMatchList
+	matchesMu        sync.RWMutex
 	matchCleanupChan chan MatchOutcome
 
 	handlers map[string]EventHandler
@@ -68,15 +69,15 @@ func (m *Manager) registerSupportedTimeControls() {
 }
 
 func (m *Manager) addClient(c *Client) {
-	m.Lock()
-	defer m.Unlock()
+	m.clientsMu.Lock()
+	defer m.clientsMu.Unlock()
 
 	m.clients[c] = true
 }
 
 func (m *Manager) removeClient(c *Client) {
-	m.Lock()
-	defer m.Unlock()
+	m.clientsMu.Lock()
+	defer m.clientsMu.Unlock()
 
 	if _, ok := m.clients[c]; ok {
 		c.connection.Close()
@@ -125,15 +126,16 @@ func (m *Manager) cleanupMatches() {
 
 			finishedMatches = append(finishedMatches, matchInfo)
 		case <-cleanupTime.C:
-			m.Lock()
+			m.matchesMu.Lock()
 			for _, finishedMatch := range finishedMatches {
 				m.logger.Info("removing match from manager", "match info", finishedMatch)
 				if match, ok := m.matches[finishedMatch.TimeControl][finishedMatch.ID]; ok {
 					match.MessagePlayers(Event{Type: EventMatchOver}, Light, Dark)
 				}
+
 				delete(m.matches[finishedMatch.TimeControl], finishedMatch.ID)
 			}
-			m.Unlock()
+			m.matchesMu.Unlock()
 
 			finishedMatches = nil
 		}
@@ -152,4 +154,23 @@ func checkOrigin(r *http.Request) bool {
 
 		return false
 	*/
+}
+
+func (m *Manager) matchMakingAddClientToMatch(c *Client) error {
+	match := m.matches[c.currentMatch.TimeControl][c.currentMatch.ID]
+	outgoingEvent, err := NewOutgoingEvent(EventAssignedMatch, c.currentMatch)
+	if err != nil {
+		return err
+	}
+
+	switch c.currentMatch.Pieces {
+	case Light:
+		m.matches[c.currentMatch.TimeControl][c.currentMatch.ID].LightPlayer = &Player{Client: c}
+		match.MessagePlayers(outgoingEvent, Light)
+	case Dark:
+		m.matches[c.currentMatch.TimeControl][c.currentMatch.ID].DarkPlayer = &Player{Client: c}
+		match.MessagePlayers(outgoingEvent, Dark)
+	}
+
+	return nil
 }

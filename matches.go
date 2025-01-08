@@ -16,6 +16,8 @@ var (
 		TimeControl(10 * float64(time.Minute)): true, // 10 minutes
 		TimeControl(20 * float64(time.Minute)): true, // 20 minutes
 	}
+
+	ErrNonExistentPiece = errors.New("non-existent piece color")
 )
 
 type MatchId string
@@ -131,6 +133,8 @@ func (m *Match) Start(cleanupChan chan<- MatchOutcome) error {
 	go m.notifyWhenOver(cleanupChan)
 
 	m.State = Started
+	m.MessagePlayers(Event{Type: EventMatchStarted}, Light, Dark)
+
 	m.LightPlayer.Clock = NewClock(m.TimeControl)
 	m.DarkPlayer.Clock = NewClock(m.TimeControl)
 
@@ -229,6 +233,51 @@ func (pc PieceColor) String() string {
 	}
 }
 
+func PieceColorFromString(str string) (PieceColor, error) {
+	switch str {
+	case "light":
+		return Light, nil
+	case "dark":
+		return Dark, nil
+	case "no_color":
+		return NoColor, nil
+	default:
+		return NoColor, ErrNonExistentPiece
+	}
+}
+
+func (pc PieceColor) MarshalJSON() ([]byte, error) {
+	return json.Marshal(pc.String())
+}
+
+func (pc *PieceColor) UnmarshalJSON(b []byte) error {
+	var v any
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+
+	switch value := v.(type) {
+	case string:
+		temp, err := PieceColorFromString(value)
+		if err != nil {
+			return err
+		}
+
+		pc = &temp
+		return nil
+	case int:
+		if value < 0 || 2 < value {
+			return ErrNonExistentPiece
+		}
+
+		temp := PieceColor(value)
+		pc = &temp
+		return nil
+	default:
+		return errors.New("invalid time control")
+	}
+}
+
 func oppositePlayer(pieces PieceColor) PieceColor {
 	switch pieces {
 	case Light:
@@ -252,11 +301,11 @@ func (m *Match) MessagePlayers(event Event, players ...PieceColor) {
 	for _, color := range players {
 		switch color {
 		case Light:
-			if m.LightPlayer.Client != nil {
+			if m.LightPlayer != nil && m.LightPlayer.Client != nil {
 				m.LightPlayer.Client.egress <- event
 			}
 		case Dark:
-			if m.DarkPlayer.Client != nil {
+			if m.DarkPlayer != nil && m.DarkPlayer.Client != nil {
 				m.DarkPlayer.Client.egress <- event
 			}
 		}
