@@ -1,4 +1,3 @@
-//{"type":"make_move","payload":{"move":"e4","player":"white"}}
 {"type":"make_move","payload":{"move":"e4"}}
 
 {"type":"join_match","payload":{"time_control":"1m"}}

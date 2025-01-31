@@ -54,6 +54,7 @@ func main() {
 		}
 
 		//message := fmt.Sprintf(`{"type":"make_move","payload":%s}`, input)
+		// {"type":"join_match","payload":{"time_control":"20m"}}
 		err = conn.WriteMessage(websocket.TextMessage, []byte(input))
 		if err != nil {
 			log.Fatalf("failed to send message: %v", err)
