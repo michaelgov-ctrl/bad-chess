@@ -1,5 +1,5 @@
-{"type":"make_move","payload":{"move":"e4"}}
+{"type":"join_match","payload":{"time_control":"20m"}}
 
-{"type":"join_match","payload":{"time_control":"1m"}}
+{"type":"make_move","payload":{"move":"e4"}}
 
 {"type":"new_match","payload":{"match_id":"acde070d-8c4c-4f0d-9d8a-162843c10333","time_control":"5m"}}

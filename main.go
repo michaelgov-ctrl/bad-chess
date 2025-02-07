@@ -9,6 +9,7 @@ import (
 func main() {
 	manager := NewManager(context.Background())
 	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.Dir("./static")))
 	mux.HandleFunc("/ping", pingEndpoint)
 	mux.HandleFunc("/ws", manager.serveWS)
 

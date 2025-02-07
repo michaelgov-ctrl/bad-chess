@@ -1,0 +1,40 @@
+#gameboard {
+    display: grid;
+    grid-template-columns: repeat(8, 40px);
+    grid-template-rows: repeat(8, 40px);
+    width: 320px;
+    height: 320px;
+    background-color: black;
+}
+
+.square {
+    width: 40px;
+    height: 40px;
+    position: relative;
+}
+
+.light {
+    background-color: #f0d9b5;
+}
+
+.dark {
+    background-color: #b58863;
+}
+
+.square svg {
+    height: 35px;
+    width: 35px;
+    margin: 5px;
+    position: relative;
+    z-index: -9;
+}
+
+path {
+    position: relative;
+    z-index: -10;
+}
+
+.piece {
+    position: relative;
+    z-index: 9;
+}
