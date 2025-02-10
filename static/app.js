@@ -2,10 +2,8 @@ const gameBoard = document.querySelector("#gameboard");
 const playerDisplay = document.querySelector("#player");
 const infoDisplay = document.querySelector("#info-display");
 const width = 8;
-let playerTurn = 'light';
-playerDisplay.textContent = playerTurn;
 
-// these can & probably should be dynamically created perspectives
+// these can & probably should be dynamically created perspectives, maybe...?
 const startPiecesLightPerspective = [
     darkRook, darkKnight, darkBishop, darkQueen, darkKing, darkBishop, darkKnight, darkRook,
     darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn,
@@ -27,6 +25,11 @@ const startPiecesDarkPerspective = [
     darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn,
     darkRook, darkKnight, darkBishop, darkKing, darkQueen, darkBishop, darkKnight, darkRook,
 ];
+
+let playerTurn = 'light';
+playerDisplay.textContent = playerTurn;
+let startPositionId = null;
+let draggedElement = null;
 
 function setBoard(piece, i) {
     const square = document.createElement('div');
@@ -53,17 +56,20 @@ function createBoard(perspective) {
     } else {
         /// if any perspective other than dark gets passed in it will be Dark Perspective as well
         startPiecesDarkPerspective.forEach((piece, i) => {
-            setBoard(piece, i);
+            setBoard(piece, 63-i);
         })
     }
 }
 
 function changePlayer() {
-
+    if (playerTurn === "dark") {
+        playerTurn = "light";
+        playerDisplay.textContent = "light";
+    } else {
+        playerTurn = "dark";
+        playerDisplay.textContent = "dark";
+    }
 }
-
-let startPositionId = null;
-let draggedElement = null;
 
 function dragStart(e) {
     draggedElement = e.target;
@@ -84,7 +90,7 @@ function dragDrop(e) {
 }
 
 // createBoard()
-createBoard("dark");
+createBoard("light");
 
 const allSquares = document.querySelectorAll("#gameboard .square");
 
