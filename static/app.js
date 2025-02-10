@@ -1,9 +1,12 @@
 const gameBoard = document.querySelector("#gameboard");
 const playerDisplay = document.querySelector("#player");
 const infoDisplay = document.querySelector("#info-display");
-
 const width = 8;
-const startPieces = [
+let playerTurn = 'light';
+playerDisplay.textContent = playerTurn;
+
+// these can & probably should be dynamically created perspectives
+const startPiecesLightPerspective = [
     darkRook, darkKnight, darkBishop, darkQueen, darkKing, darkBishop, darkKnight, darkRook,
     darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn,
     '', '', '', '', '', '', '', '',
@@ -14,24 +17,49 @@ const startPieces = [
     lightRook, lightKnight, lightBishop, lightQueen, lightKing, lightBishop, lightKnight, lightRook,
 ];
 
-// createBoard()
-function createBoardLightPerspective() {
-    startPieces.forEach((piece, i) => {
-        const square = document.createElement('div');
-        square.classList.add('square');
-        square.innerHTML = piece;
-        square.firstChild?.setAttribute('draggable', true)
-        square.setAttribute('square-id', i);
+const startPiecesDarkPerspective = [
+    lightRook, lightKnight, lightBishop, lightKing, lightQueen, lightBishop, lightKnight, lightRook,
+    lightPawn, lightPawn, lightPawn, lightPawn, lightPawn, lightPawn, lightPawn, lightPawn,
+    '', '', '', '', '', '', '', '',
+    '', '', '', '', '', '', '', '',
+    '', '', '', '', '', '', '', '',
+    '', '', '', '', '', '', '', '',
+    darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn,
+    darkRook, darkKnight, darkBishop, darkKing, darkQueen, darkBishop, darkKnight, darkRook,
+];
 
-        const row = Math.floor( (63 - i) / 8 ) + 1
-        if ( row % 2 === 0 ) {
-            square.classList.add(i % 2 === 0 ? "light" : "dark" );
-        } else {
-            square.classList.add(i % 2 === 0 ? "dark" : "light" );
-        }
+function setBoard(piece, i) {
+    const square = document.createElement('div');
+    square.classList.add('square');
+    square.innerHTML = piece;
+    square.firstChild?.setAttribute('draggable', true)
+    square.setAttribute('square-id', i);
 
-        gameBoard.append(square);
-    })
+    const row = Math.floor( (63 - i) / 8 ) + 1
+    if ( row % 2 === 0 ) {
+        square.classList.add(i % 2 === 0 ? "light" : "dark" );
+    } else {
+        square.classList.add(i % 2 === 0 ? "dark" : "light" );
+    }
+
+    gameBoard.append(square);
+}
+
+function createBoard(perspective) {
+    if ( perspective === "light" ) {
+        startPiecesLightPerspective.forEach((piece, i) => {
+            setBoard(piece, i);
+        })
+    } else {
+        /// if any perspective other than dark gets passed in it will be Dark Perspective as well
+        startPiecesDarkPerspective.forEach((piece, i) => {
+            setBoard(piece, i);
+        })
+    }
+}
+
+function changePlayer() {
+
 }
 
 let startPositionId = null;
@@ -48,13 +76,15 @@ function dragOver(e) {
 
 function dragDrop(e) {
     e.stopPropagation();
+    const taken = e.target.classList.contains('piece');
 
-    //e.target.parentNode.append(draggedElement);
-    e.target.append(draggedElement);
+    // e.target.parentNode.append(draggedElement);
+    // e.target.remove();
+    changePlayer();
 }
 
 // createBoard()
-createBoardLightPerspective();
+createBoard("dark");
 
 const allSquares = document.querySelectorAll("#gameboard .square");
 
