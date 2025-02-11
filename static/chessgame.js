@@ -94,55 +94,55 @@ function checkIfValidMove(target) {
     
     switch(true) {
         case piece.includes("pawn") :
-            if (piece.includes("light")) {
-                const starterRow = [48,49,50,51,52,53,54,55];
-                if (
-                    (starterRow.includes(startId) && startId - (width * 2) === targetId) ||
-                    startId - width === targetId ||
-                    (startId - width - 1 === targetId && document.querySelectorAll(`[square-id="${startId - width - 1}"]`)[0]?.firstChild?.getAttribute("class") === "piece") ||
-                    (startId - width + 1 === targetId && document.querySelectorAll(`[square-id="${startId - width + 1}"]`)[0]?.firstChild?.getAttribute("class") === "piece")
-                ) {
-                    return true
-                }
-            } else {
-                const starterRow = [8,9,10,11,12,13,14,15];
-                if (
-                    (starterRow.includes(startId) && startId + (width * 2) === targetId) ||
-                    startId + width === targetId ||
-                    (startId + width - 1 === targetId && document.querySelectorAll(`[square-id="${startId + width - 1}"]`)[0]?.firstChild?.getAttribute("class") === "piece") ||
-                    (startId + width + 1 === targetId && document.querySelectorAll(`[square-id="${startId + width + 1}"]`)[0]?.firstChild?.getAttribute("class") === "piece")
-                ) {
-                    return true
-                }
+            if ( piece.includes("light") && validLightPawnMove(startId, targetId, width) ) {
+                // TODO light piece promotion if back rank
+                return true;
             }
-            break;
-        case piece.includes("knight") :
-            if (
-                startId + (width * 2) - 1 === targetId ||
-                startId + (width * 2) + 1 === targetId ||
-                startId + width - 2 === targetId ||
-                startId + width + 2 === targetId ||
-                startId - (width * 2) - 1 === targetId ||
-                startId - (width * 2) + 1 === targetId ||
-                startId - width - 2 === targetId ||
-                startId - width + 2 === targetId
-            ) {
-                return true
-            }
-            break;
-        case piece.includes("bishop") :
             
-            return true
+            if ( piece.includes("dark") && validDarkPawnMove(startId, targetId, width) ) {
+                // TODO dark piece promotion if back rank
+                return true;
+            }
+
+            break;
+
+        case piece.includes("knight") :
+            if ( validKnightMove(startId, targetId, width) ) {
+                return true;
+            }
+
+            break;
+
+        case piece.includes("bishop") :
+            if ( validBishopMove(startId, targetId, width) ) {
+                return true;
+            }
+
+            break;
+            
         case piece.includes("rook") :
-            return true
+            if ( validRookMove(startId, targetId, width) ) {
+                return true;
+            }
+
+            break;
+
         case piece.includes("queen") :
-            return true
+            if ( validBishopMove(startId, targetId, width) || validRookMove(startId, targetId, width) ) {
+                return true;
+            }
+
+            break;
+
         case piece.includes("king") :
-            return true
+            if ( validKingMove(startId, targetId, width) ) {
+                return true;
+            }
+            
+            break;
     }
 
-    console.log("out of piece validation switch statement")
-    return false
+    return false;
 }
 
 function temporaryMessage(msg) {
@@ -199,7 +199,7 @@ function dragDrop(e) {
 
 
 // start
-createBoard("dark");
+createBoard("light");
 
 const allSquares = document.querySelectorAll(".square");
 
