@@ -106,6 +106,10 @@ class WebSocketManager {
         }
     
         switch (evtMsg.type) {
+            case "propagate_move":
+                console.log("received propagated move:", evtMsg.payload);
+                // TODO: update board with moved piece
+                break;
             case "match_error":
                 this.interuptMessage = evtMsg.payload;
                 break;

@@ -175,8 +175,10 @@ var websocketDragDrop = function(wsManager) {
         }    
         
         // TODO: convert move ot algebraic notation
-        console.log(squareIdToAlgebraicNotation(startId));
-        console.log(squareIdToAlgebraicNotation(targetId));
+        console.log("moved piece:", draggedElement.id);
+        console.log("targeted piece if any:", e.target.parentNode.getAttribute("class"));
+        console.log("start square:", squareIdToAlgebraicNotation(startId));
+        console.log("target square:", squareIdToAlgebraicNotation(targetId));
 
         const evtMsg = new EventMessage("make_move", '{"move":"e4"}');
  
