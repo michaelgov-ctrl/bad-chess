@@ -73,13 +73,11 @@ function changePlayer() {
 
 function squareIdToAlgebraicNotation(squareId) {
     const file = String.fromCharCode(97 + (squareId % 8));
-    const rank = Math.floor(squareId / 8) + 1;
+    const rank = Math.floor((63-squareId) / 8) + 1;
     return file + rank
 }
 
-function checkIfValidMove(target) {
-    const targetId = Number(target.getAttribute("square-id") || target.parentNode.parentNode.getAttribute('square-id'));
-    const startId = Number(startPositionId);
+function checkIfValidMove(startId, targetId) {
     const piece = draggedElement.id;
     
     switch(true) {
@@ -159,7 +157,9 @@ var websocketDragDrop = function(wsManager) {
             return
         }
         
-        const valid = checkIfValidMove(e.target);
+        const startId = Number(startPositionId);
+        const targetId = Number(e.target.getAttribute("square-id") || e.target.parentNode.parentNode.getAttribute('square-id'));
+        const valid = checkIfValidMove(startId, targetId);
         if (!valid) {
             //console.log("taken", taken, "opp", opponent, "takenBy", takenByOpponent, "v", valid);
             temporaryMessage("invalid move");
@@ -175,8 +175,9 @@ var websocketDragDrop = function(wsManager) {
         }    
         
         // TODO: convert move ot algebraic notation
-        console.log(e.target)
-        console.log(squareIdToAlgebraicNotation(startPositionId))
+        console.log(squareIdToAlgebraicNotation(startId));
+        console.log(squareIdToAlgebraicNotation(targetId));
+
         const evtMsg = new EventMessage("make_move", '{"move":"e4"}');
  
         wsManager.send(evtMsg);

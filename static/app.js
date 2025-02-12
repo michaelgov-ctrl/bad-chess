@@ -10,7 +10,7 @@ setTimeout(function(){
 }, 2000);
 
 // start game
-createBoard("light");
+createBoard("dark");
 
 const allSquares = document.querySelectorAll(".square");
 
