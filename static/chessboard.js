@@ -5,25 +5,25 @@ const width = 8;
 
 // these can & probably should be dynamically created perspectives, maybe...?
 const startPiecesLightPerspective = [
-    darkRook, darkKnight, darkBishop, darkQueen, darkKing, darkBishop, darkKnight, darkRook,
-    darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn,
+    dark_rook, dark_knight, dark_bishop, dark_queen, dark_king, dark_bishop, dark_knight, dark_rook,
+    dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn,
     '', '', '', '', '', '', '', '',
     '', '', '', '', '', '', '', '',
     '', '', '', '', '', '', '', '',
     '', '', '', '', '', '', '', '',
-    lightPawn, lightPawn, lightPawn, lightPawn, lightPawn, lightPawn, lightPawn, lightPawn,
-    lightRook, lightKnight, lightBishop, lightQueen, lightKing, lightBishop, lightKnight, lightRook,
+    light_pawn, light_pawn, light_pawn, light_pawn, light_pawn, light_pawn, light_pawn, light_pawn,
+    light_rook, light_knight, light_bishop, light_queen, light_king, light_bishop, light_knight, light_rook,
 ];
 
 const startPiecesDarkPerspective = [
-    lightRook, lightKnight, lightBishop, lightKing, lightQueen, lightBishop, lightKnight, lightRook,
-    lightPawn, lightPawn, lightPawn, lightPawn, lightPawn, lightPawn, lightPawn, lightPawn,
+    light_rook, light_knight, light_bishop, light_king, light_queen, light_bishop, light_knight, light_rook,
+    light_pawn, light_pawn, light_pawn, light_pawn, light_pawn, light_pawn, light_pawn, light_pawn,
     '', '', '', '', '', '', '', '',
     '', '', '', '', '', '', '', '',
     '', '', '', '', '', '', '', '',
     '', '', '', '', '', '', '', '',
-    darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn, darkPawn,
-    darkRook, darkKnight, darkBishop, darkKing, darkQueen, darkBishop, darkKnight, darkRook,
+    dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn,
+    dark_rook, dark_knight, dark_bishop, dark_king, dark_queen, dark_bishop, dark_knight, dark_rook,
 ];
 
 let playerTurn = 'light';
@@ -69,6 +69,12 @@ function changePlayer() {
         playerTurn = "dark";
         playerDisplay.textContent = "dark";
     }
+}
+
+function squareIdToAlgebraicNotation(squareId) {
+    const file = String.fromCharCode(97 + (squareId % 8));
+    const rank = Math.floor(squareId / 8) + 1;
+    return file + rank
 }
 
 function checkIfValidMove(target) {
@@ -143,39 +149,51 @@ function dragOver(e) {
     e.preventDefault();
 }
 
-function dragDrop(e) {
-    e.stopPropagation();
+var websocketDragDrop = function(wsManager) {
+    return function dragDrop(e) {
+        e.stopPropagation();
 
-    const correctTurn = draggedElement.getAttribute('id').includes(playerTurn);
-    if (!correctTurn) {
-        temporaryMessage("not your turn buddy");
-        return
-    }
-    
-    const valid = checkIfValidMove(e.target);
-    if (!valid) {
-        //console.log("taken", taken, "opp", opponent, "takenBy", takenByOpponent, "v", valid);
-        temporaryMessage("invalid move");
-        return
-    }
+        const correctTurn = draggedElement.getAttribute('id').includes(playerTurn);
+        if (!correctTurn) {
+            temporaryMessage("not your turn buddy");
+            return
+        }
+        
+        const valid = checkIfValidMove(e.target);
+        if (!valid) {
+            //console.log("taken", taken, "opp", opponent, "takenBy", takenByOpponent, "v", valid);
+            temporaryMessage("invalid move");
+            return
+        }
 
-    const taken = e.target.parentNode.getAttribute("class")?.includes("piece");//?.contains('piece');
-    const opponent = playerTurn === "light" ? "dark" : "light";
-    const containsOpponent = e.target.parentNode.getAttribute("id").includes(opponent);
-    if (taken && !containsOpponent) {
-        temporaryMessage("invalid move");
-        return
-    }    
-    
-    // send move to server for validation here, if error return
-
-    if (taken && containsOpponent) {
-        const square = e.target.parentNode.parentNode;
-        e.target.parentNode.remove();
-        square.append(draggedElement);
-    } else {
-        e.target.append(draggedElement);
+        const taken = e.target.parentNode.getAttribute("class")?.includes("piece");//?.contains('piece');
+        const opponent = playerTurn === "light" ? "dark" : "light";
+        const containsOpponent = e.target.parentNode.getAttribute("id").includes(opponent);
+        if (taken && !containsOpponent) {
+            temporaryMessage("invalid move");
+            return
+        }    
+        
+        // TODO: convert move ot algebraic notation
+        console.log(e.target)
+        console.log(squareIdToAlgebraicNotation(startPositionId))
+        const evtMsg = new EventMessage("make_move", '{"move":"e4"}');
+ 
+        wsManager.send(evtMsg);
+        wsManager.interrupt()
+            .then(() => {
+                if (taken && containsOpponent) {
+                    const square = e.target.parentNode.parentNode;
+                    e.target.parentNode.remove();
+                    square.append(draggedElement);
+                } else {
+                    e.target.append(draggedElement);
+                }
+                
+                changePlayer();
+            })
+            .catch((error) => {
+                temporaryMessage(JSON.stringify(error));
+            });
     }
-    
-    changePlayer();
 }

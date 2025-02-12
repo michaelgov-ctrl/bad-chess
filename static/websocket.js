@@ -52,6 +52,7 @@ class ErrorEventMessage {
 
 class WebSocketManager {
     socket = null;
+    interuptMessage = null;
 
     connect() {
         this.socket = new WebSocket('ws://localhost:8080/ws');
@@ -62,7 +63,7 @@ class WebSocketManager {
 
         this.socket.addEventListener('message', (evt) => {
             const msg = JSON.parse(evt.data);
-            routeEventMessage(msg);
+            this.routeEventMessage(msg);
         });
 
         this.socket.addEventListener('error', (err) => {
@@ -83,16 +84,35 @@ class WebSocketManager {
             console.log('cannot send message websocket not open.');
         }
     }
-}
 
-function routeEventMessage(evtMsg) {
-    if (evtMsg.type === undefined) {
-        alert('no type field in the event');
+    interrupt() {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                if ( this.interuptMessage === null ) {
+                    resolve("success");
+                } else {
+                    const msg = this.interuptMessage;
+                    this.interuptMessage = null;
+                    console.log(msg, this.interuptMessage);
+                    reject(msg);
+                }
+            }, 100)
+        });
     }
 
-    switch (evtMsg.type) {
-        default:
-            console.log('resp:', evtMsg);
-            break;
+    routeEventMessage(evtMsg) {
+        if (evtMsg.type === undefined) {
+            alert('no type field in the event');
+        }
+    
+        switch (evtMsg.type) {
+            case "match_error":
+                this.interuptMessage = evtMsg.payload;
+                break;
+            default:
+                console.log('resp:', evtMsg);
+                break;
+        }
     }
 }
+

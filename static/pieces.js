@@ -1,4 +1,4 @@
-const darkBishop = `<div class="piece" id="darkbishop">
+const dark_bishop = `<div class="piece" id="dark_bishop">
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
@@ -34,7 +34,7 @@ const darkBishop = `<div class="piece" id="darkbishop">
 </svg>
 </div>`
 
-const darkKing = `<div class="piece" id="darkking">
+const dark_king = `<div class="piece" id="dark_king">
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
@@ -74,7 +74,7 @@ const darkKing = `<div class="piece" id="darkking">
 </svg>
 </div>`
 
-const darkKnight = `<div class="piece" id="darkknight">
+const dark_knight = `<div class="piece" id="dark_knight">
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
@@ -111,7 +111,7 @@ const darkKnight = `<div class="piece" id="darkknight">
 </svg>
 </div>`
 
-const darkPawn = `<div class="piece" id="darkpawn">
+const dark_pawn = `<div class="piece" id="dark_pawn">
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
@@ -143,7 +143,7 @@ const darkPawn = `<div class="piece" id="darkpawn">
 </svg>
 </div>`
 
-const darkQueen = `<div class="piece" id="darkqueen">
+const dark_queen = `<div class="piece" id="dark_queen">
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
@@ -183,7 +183,7 @@ const darkQueen = `<div class="piece" id="darkqueen">
 </svg>
 </div>`
 
-const darkRook = `<div class="piece" id="darkrook">
+const dark_rook = `<div class="piece" id="dark_rook">
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
@@ -215,7 +215,7 @@ const darkRook = `<div class="piece" id="darkrook">
 </svg>
 </div>`
 
-const lightBishop = `<div class="piece" id="lightbishop">
+const light_bishop = `<div class="piece" id="light_bishop">
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
@@ -251,7 +251,7 @@ const lightBishop = `<div class="piece" id="lightbishop">
 </svg>
 </div>`
 
-const lightKing = `<div class="piece" id="lightking">
+const light_king = `<div class="piece" id="light_king">
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
@@ -291,7 +291,7 @@ const lightKing = `<div class="piece" id="lightking">
 </svg>
 </div>`
 
-const lightKnight = `<div class="piece" id="lightknight">
+const light_knight = `<div class="piece" id="light_knight">
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
@@ -328,7 +328,7 @@ const lightKnight = `<div class="piece" id="lightknight">
 </svg>
 </div>`
 
-const lightPawn = `<div class="piece" id="lightpawn">
+const light_pawn = `<div class="piece" id="light_pawn">
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
@@ -360,7 +360,7 @@ const lightPawn = `<div class="piece" id="lightpawn">
 </svg>
 </div>`
 
-const lightQueen = `<div class="piece" id="lightqueen">
+const light_queen = `<div class="piece" id="light_queen">
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
@@ -400,7 +400,7 @@ const lightQueen = `<div class="piece" id="lightqueen">
 </svg>
 </div>`
 
-const lightRook = `<div class="piece" id="lightrook">
+const light_rook = `<div class="piece" id="light_rook">
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
