@@ -1,3 +1,7 @@
+body {
+    background-color: lightblue;
+}
+
 #gameboard {
     display: grid;
     grid-template-columns: repeat(8, 40px);

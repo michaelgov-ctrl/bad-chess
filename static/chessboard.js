@@ -61,27 +61,11 @@ function createBoard(perspective) {
     }
 }
 
-function reverseIds() {
-    const allSquares = document.querySelectorAll(".square");
-    allSquares.forEach((square, i) => {
-        square.setAttribute('square-id', (width * width - 1) - i);
-    })
-}
-
-function revertIds() {
-    const allSquares = document.querySelectorAll(".square");
-    allSquares.forEach((square, i) => {
-        square.setAttribute('square-id', i);
-    })
-}
-
 function changePlayer() {
     if (playerTurn === "dark") {
-        //revertIds(); // only necessary for shared play
         playerTurn = "light";
         playerDisplay.textContent = "light";
     } else {
-        //reverseIds(); // only necessary for shared play
         playerTurn = "dark";
         playerDisplay.textContent = "dark";
     }
@@ -195,16 +179,3 @@ function dragDrop(e) {
     
     changePlayer();
 }
-
-
-
-// start
-createBoard("light");
-
-const allSquares = document.querySelectorAll(".square");
-
-allSquares.forEach( square => {
-    square.addEventListener('dragstart', dragStart);
-    square.addEventListener('dragover', dragOver);
-    square.addEventListener('drop', dragDrop);
-})
