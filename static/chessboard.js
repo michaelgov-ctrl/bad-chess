@@ -133,6 +133,23 @@ function checkIfValidMove(startId, targetId) {
     return false;
 }
 
+function pieceToLetter(p) {
+    switch (p) {
+        case "king":
+            return "K";
+        case "queen":
+            return "Q";
+        case "rook":
+            return "R";
+        case "bishop":
+            return "B";
+        case "knight":
+            return "N";
+        default:
+            return "";
+    }
+}
+
 function temporaryMessage(msg) {
     infoDisplay.textContent = msg;
     setTimeout(() => infoDisplay.textContent = "", 2000)
@@ -174,14 +191,30 @@ var websocketDragDrop = function(wsManager) {
             return
         }    
         
-        // TODO: convert move ot algebraic notation
-        console.log("moved piece:", draggedElement.id);
-        console.log("targeted piece if any:", e.target.parentNode.getAttribute("class"));
-        console.log("start square:", squareIdToAlgebraicNotation(startId));
-        console.log("target square:", squareIdToAlgebraicNotation(targetId));
 
-        const evtMsg = new EventMessage("make_move", '{"move":"e4"}');
+
+        // TODO: convert move ot algebraic notation
+        let algMove = new Move(null, null, null, null);
+        const movedPiece = draggedElement.id.substring(draggedElement.id.indexOf("_") + 1);
+        console.log("moved piece:", movedPiece);
+        algMove.movedPiece = pieceToLetter(movedPiece);
+
+        const t = e.target.parentNode.getAttribute("class")
+        console.log("targeted piece if any:", t);
+        if ( t ) {
+            algMove.capture = true;
+        }
+
+        //console.log("start square:", squareIdToAlgebraicNotation(startId));
+
+        algMove.targetSquare = squareIdToAlgebraicNotation(targetId);
+        console.log("target square:", algMove.targetSquare);
+
+        console.log("sent event:", algMove.moveToAlgebraicNotationString())
+        const evtMsg = new EventMessage("make_move", `{"move":"${algMove.moveToAlgebraicNotationString()}"}`);
  
+
+
         wsManager.send(evtMsg);
         wsManager.interrupt()
             .then(() => {
