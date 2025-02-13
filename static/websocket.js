@@ -116,6 +116,37 @@ class WebSocketManager {
         }
     
         switch (evtMsg.type) {
+            case "propagate_position":
+                console.log("received propagated position:", evtMsg.payload);
+                const fen = evtMsg.payload?.fen;
+                if ( fen === null ) {
+                    alert("something went awry");
+                    return;
+                }
+
+                const currentPosition = fen.substring(0, fen.indexOf(' '));
+                let squareId = 0;
+                for (const c of currentPosition) {
+                    if ( c == '/' ) {
+                        continue;
+                    }
+
+                    if (c >= '0' && c <= '8') {
+                        for ( let i = 0; i < parseInt(c); i++ ) {
+                            const square = document.querySelector(`[square-id="${squareId}"]`).innerHTML = '';
+                            squareId++;
+                        }
+                        continue;
+                    }
+
+                    const square = document.querySelector(`[square-id="${squareId}"]`);
+                    square.innerHTML = fenCharToPiece(c);
+                    square.firstChild.setAttribute('draggable', true)
+                    squareId++;
+                }
+
+                changePlayer();
+                break;
             case "propagate_move":
                 console.log("received propagated move:", evtMsg.payload);
                 //console.log("targeted piece if any:", e.target.parentNode.getAttribute("class"))
@@ -136,6 +167,30 @@ class WebSocketManager {
     }
 }
 
+class Move {
+    startingSquare;
+    movedPiece;
+    targetSquare;
+    targetPiece;
+    capture;
+    playerColor;
+
+    constructor(sSq, mp, ts, tp, c, pc) {
+        this.startingSquare = sSq;
+        this.movedPiece = mp;
+        this.targetSquare = ts;
+        this.targetPiece = tp;
+        this.capture = c;
+        this.playerColor = pc;
+    }
+
+    moveToAlgebraicNotationString() {
+        return this.movedPiece + (this.capture ? "x" : "") + this.targetSquare;
+    }
+}
+
+/*
+propagate move funny business
 class Move {
     startingSquare;
     movedPiece;
@@ -273,3 +328,4 @@ function algToMove(color, alg) {
     return mv
 
 }
+*/

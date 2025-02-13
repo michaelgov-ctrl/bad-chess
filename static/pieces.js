@@ -437,8 +437,9 @@ function validLightPawnMove(startId, targetId, width) {
    if (
       (starterRow.includes(startId) && startId - (width * 2) === targetId) ||
       startId - width === targetId ||
-      (startId - width - 1 === targetId && document.querySelector(`[square-id="${startId - width - 1}"]`)?.firstChild?.getAttribute("class") === "piece") ||
-      (startId - width + 1 === targetId && document.querySelector(`[square-id="${startId - width + 1}"]`)?.firstChild?.getAttribute("class") === "piece")
+      // allow for en passant validation by server for now
+      startId - width + 1 === targetId || // && document.querySelector(`[square-id="${startId - width - 1}"]`)?.firstChild?.getAttribute("class") === "piece") ||
+      startId - width - 1 === targetId    // && document.querySelector(`[square-id="${startId - width + 1}"]`)?.firstChild?.getAttribute("class") === "piece")
   ) {
       return true;
   }
@@ -451,13 +452,25 @@ function validDarkPawnMove(startId, targetId, width) {
    if (
       (starterRow.includes(startId) && startId + (width * 2) === targetId) ||
       startId + width === targetId ||
-      (startId + width - 1 === targetId && document.querySelector(`[square-id="${startId + width - 1}"]`)?.firstChild?.getAttribute("class") === "piece") ||
-      (startId + width + 1 === targetId && document.querySelector(`[square-id="${startId + width + 1}"]`)?.firstChild?.getAttribute("class") === "piece")
+      // allow for en passant validation by server for now
+      startId + width + 1 === targetId || // && document.querySelector(`[square-id="${startId + width - 1}"]`)?.firstChild?.getAttribute("class") === "piece") ||
+      startId + width - 1 === targetId    // && document.querySelector(`[square-id="${startId + width + 1}"]`)?.firstChild?.getAttribute("class") === "piece")
    ) {
       return true;
    }
 
   return false;
+}
+
+function validEnPassant(startId, targetId, width) {
+   if (
+      startId - width + 1 === targetId && ( document.querySelector(`[square-id="${startId + 1}"]`)?.firstChild || document.querySelector(`[square-id="${startId - 1}"]`)?.firstChild ) ||
+      startId - width - 1 === targetId && ( document.querySelector(`[square-id="${startId + 1}"]`)?.firstChild || document.querySelector(`[square-id="${startId - 1}"]`)?.firstChild )
+   ) {
+      return true;
+   }
+
+   return false;
 }
 
 function validKnightMove(startId, targetId, width) {
@@ -479,7 +492,7 @@ function validKnightMove(startId, targetId, width) {
 
 function validBishopMove(startId, targetId, width) {
    if (
-      // TODO: are all of these checks faster than assigning each querySelector then cascading?
+      // TODO: change to for loop
       // forward one diagonal
       startId + width + 1 === targetId ||
       (startId + (width * 2) + 2 === targetId && !document.querySelector(`[square-id="${startId + width + 1}"]`)?.firstChild) ||
@@ -524,7 +537,7 @@ function validBishopMove(startId, targetId, width) {
 
 function validRookMove(startId, targetId, width) {
    if (
-      // TODO: are all of these checks faster than assigning each querySelector then cascading?
+      // TODO: change to for loop
       // move forward
       startId + width === targetId ||
       (startId + (width * 2) === targetId && !document.querySelector(`[square-id="${startId + width}"]`)?.firstChild) ||
@@ -582,4 +595,35 @@ function validKingMove(startId, targetId, width) {
    }
 
    return false;
+}
+
+function fenCharToPiece(p) {
+   switch (p) {
+      case "k":
+         return dark_king;
+      case "q":
+         return dark_queen;
+      case "r":
+         return dark_rook;
+      case "b":
+         return dark_bishop;
+      case "n":
+         return dark_knight;
+      case "p":
+         return dark_pawn;
+      case "K":
+         return light_king;
+      case "Q":
+         return light_queen;
+      case "R":
+         return light_rook;
+      case "B":
+         return light_bishop;
+      case "N":
+         return light_knight;
+      case "P":
+         return light_pawn;
+      default:
+         return "oops"
+   }
 }

@@ -168,57 +168,51 @@ var websocketDragDrop = function(wsManager) {
     return function dragDrop(e) {
         e.stopPropagation();
 
-        const correctTurn = draggedElement.getAttribute('id').includes(playerTurn);
-        if (!correctTurn) {
+        if ( !draggedElement.getAttribute('id').includes(playerTurn) ) {
             temporaryMessage("not your turn buddy");
             return
         }
         
         const startId = Number(startPositionId);
         const targetId = Number(e.target.getAttribute("square-id") || e.target.parentNode.parentNode.getAttribute('square-id'));
-        const valid = checkIfValidMove(startId, targetId);
-        if (!valid) {
-            //console.log("taken", taken, "opp", opponent, "takenBy", takenByOpponent, "v", valid);
+        if ( !checkIfValidMove(startId, targetId) ) {
             temporaryMessage("invalid move");
             return
         }
 
-        const taken = e.target.parentNode.getAttribute("class")?.includes("piece");//?.contains('piece');
+        const taken = e.target.parentNode.getAttribute("class")?.includes("piece");
         const opponent = playerTurn === "light" ? "dark" : "light";
         const containsOpponent = e.target.parentNode.getAttribute("id").includes(opponent);
-        if (taken && !containsOpponent) {
+        if ( taken && !containsOpponent ) {
             temporaryMessage("invalid move");
             return
         }    
         
-
-
-        // TODO: convert move ot algebraic notation
+        // generate string for alebraic notation of the move to send to server
         let algMove = new Move(null, null, null, null);
         const movedPiece = draggedElement.id.substring(draggedElement.id.indexOf("_") + 1);
-        console.log("moved piece:", movedPiece);
         algMove.movedPiece = pieceToLetter(movedPiece);
 
-        const t = e.target.parentNode.getAttribute("class")
-        console.log("targeted piece if any:", t);
-        if ( t ) {
+        if ( algMove.movedPiece === "" && ( validEnPassant(startId, targetId, width) || taken ) ) {
+            // TODO: remove en passanted piece
+            // don't love reassigning taken here
+            taken = true;
+            algMove.capture = true;
+            algMove.movedPiece = squareIdToAlgebraicNotation(startPositionId).charAt(0);
+        }
+
+        if ( taken ) {
             algMove.capture = true;
         }
 
-        //console.log("start square:", squareIdToAlgebraicNotation(startId));
-
         algMove.targetSquare = squareIdToAlgebraicNotation(targetId);
-        console.log("target square:", algMove.targetSquare);
-
-        console.log("sent event:", algMove.moveToAlgebraicNotationString())
         const evtMsg = new EventMessage("make_move", `{"move":"${algMove.moveToAlgebraicNotationString()}"}`);
- 
-
 
         wsManager.send(evtMsg);
+        // consider in the future sending position with error messages
         wsManager.interrupt()
             .then(() => {
-                if (taken && containsOpponent) {
+                if ( taken && containsOpponent ) {
                     const square = e.target.parentNode.parentNode;
                     e.target.parentNode.remove();
                     square.append(draggedElement);
