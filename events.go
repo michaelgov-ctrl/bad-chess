@@ -13,14 +13,15 @@ type Event struct {
 type EventHandler func(event Event, c *Client) error
 
 const (
-	EventAssignedMatch    = "assigned_match"
-	EventMatchOver        = "match_over"
-	EventMatchStarted     = "match_started"
-	EventJoinMatchRequest = "join_match"
-	EventMakeMove         = "make_move"
-	EventMatchError       = "match_error"
-	EventNewMatchRequest  = "new_match"
-	EventPropagateMove    = "propagate_move"
+	EventAssignedMatch     = "assigned_match"
+	EventMatchOver         = "match_over"
+	EventMatchStarted      = "match_started"
+	EventJoinMatchRequest  = "join_match"
+	EventMakeMove          = "make_move"
+	EventMatchError        = "match_error"
+	EventNewMatchRequest   = "new_match"
+	EventPropagateMove     = "propagate_move"
+	EventPropagatePosition = "propagate_position"
 )
 
 type JoinMatchEvent struct {
@@ -35,6 +36,11 @@ type MakeMoveEvent struct {
 type PropagateMoveEvent struct {
 	PlayerColor string `json:"player"`
 	MoveEvent   MakeMoveEvent
+}
+
+type PropagatePositionEvent struct {
+	PlayerColor string `json:"player"`
+	FEN         string `json:"fen"`
 }
 
 type ErrorEvent struct {

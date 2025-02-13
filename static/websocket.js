@@ -42,6 +42,16 @@ class PropagateMoveEventMessage {
     }
 }
 
+class PropagatePositionEventMessage {
+    playerColor;
+    moveEventMessage;
+
+    constructor(playerColor, mvEvtMsg) {
+        this.playerColor = playerColor;
+        this.moveEventMessage = mvEvtMsg;
+    }
+}
+
 class ErrorEventMessage {
     error;
     

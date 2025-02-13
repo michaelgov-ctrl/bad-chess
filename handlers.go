@@ -64,9 +64,9 @@ func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
 			return err
 		}
 
-		outgoingEvent, err := NewOutgoingEvent(EventPropagateMove, PropagateMoveEvent{
+		outgoingEvent, err := NewOutgoingEvent(EventPropagatePosition, PropagatePositionEvent{
 			PlayerColor: clientPlayerColor.String(),
-			MoveEvent:   moveEvent,
+			FEN:         match.Game.FEN(),
 		})
 		if err != nil {
 			return err
