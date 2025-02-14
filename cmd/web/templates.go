@@ -3,10 +3,21 @@ package main
 import (
 	"html/template"
 	"io/fs"
+	"net/http"
 	"path/filepath"
 
 	"github.com/michaelgov-ctrl/badchess/ui"
 )
+
+type templateData struct {
+	IsAuthenticated bool
+}
+
+func (app *application) newTemplateData(r *http.Request) templateData {
+	return templateData{
+		IsAuthenticated: false,
+	}
+}
 
 func newTemplateCache() (map[string]*template.Template, error) {
 	var cache = make(map[string]*template.Template)

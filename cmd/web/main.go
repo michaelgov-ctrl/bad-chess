@@ -32,7 +32,7 @@ type application struct {
 func main() {
 	var cfg config
 
-	flag.IntVar(&cfg.port, "port", 4000, "API server port")
+	flag.IntVar(&cfg.port, "port", 8080, "API server port")
 	flag.StringVar(&cfg.logLevel, "log-level", "error", "Logging level (trace|debug|info|warning|error)")
 
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 20, "Rate limiter maximum requests per second")
@@ -61,7 +61,8 @@ func main() {
 		templateCache: templateCache,
 	}
 
-	if err := app.serveTLS("", ""); err != nil {
+	// if err := app.serveTLS("", ""); err != nil {
+	if err := app.serve(); err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}

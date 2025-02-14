@@ -9,10 +9,13 @@ import (
 func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
 
-	mux.Handle("GET /", http.FileServerFS(ui.Files))
+	mux.Handle("GET /static/", http.FileServerFS(ui.Files))
 
-	mux.HandleFunc("/ping", pingEndpoint)
-	mux.HandleFunc("/ws", app.manager.serveWS)
+	mux.HandleFunc("GET /{$}", app.home)
+	mux.HandleFunc("GET /ping", app.pingEndpoint)
+
+	mux.HandleFunc("/matches/", app.matchesHandler)
+	mux.HandleFunc("/matches/ws", app.manager.serveWS)
 
 	return mux
 }

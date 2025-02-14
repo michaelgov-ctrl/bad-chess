@@ -129,7 +129,8 @@ class GameManager {
     interuptMessage = null;
 
     connect() {
-        this.socket = new WebSocket('ws://localhost:8080/ws');
+        // TODO: check here for upgrading ws to wss
+        this.socket = new WebSocket('ws://localhost:8080/matches/ws');
 
         this.socket.addEventListener('open', () => {
             console.log('ws conn opened');
