@@ -195,8 +195,6 @@ var websocketDragDrop = function(wsManager) {
 
         if ( algMove.movedPiece === "" && ( validEnPassant(startId, targetId, width) || taken ) ) {
             // TODO: remove en passanted piece
-            // don't love reassigning taken here
-            taken = true;
             algMove.capture = true;
             algMove.movedPiece = squareIdToAlgebraicNotation(startPositionId).charAt(0);
         }
@@ -206,22 +204,13 @@ var websocketDragDrop = function(wsManager) {
         }
 
         algMove.targetSquare = squareIdToAlgebraicNotation(targetId);
+
+        // TODO: handle promotions
+        // probably related - consider in the future sending position with error messages
         const evtMsg = new EventMessage("make_move", `{"move":"${algMove.moveToAlgebraicNotationString()}"}`);
 
         wsManager.send(evtMsg);
-        // consider in the future sending position with error messages
         wsManager.interrupt()
-            .then(() => {
-                if ( taken && containsOpponent ) {
-                    const square = e.target.parentNode.parentNode;
-                    e.target.parentNode.remove();
-                    square.append(draggedElement);
-                } else {
-                    e.target.append(draggedElement);
-                }
-                
-                changePlayer();
-            })
             .catch((error) => {
                 temporaryMessage(JSON.stringify(error));
             });

@@ -74,11 +74,11 @@ func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
 
 		// send only to other player, should an accept be sent back to client?
 		// egress is handled in (c *Client) writeMessages()
-		match.MessagePlayers(outgoingEvent, oppositePlayer(clientPlayerColor))
+		// match.MessagePlayers(outgoingEvent, oppositePlayer(clientPlayerColor))
 
 		// for now message both players, serves as a successful acknowledgement to sender
 		// and notification for opponent
-		// match.MessagePlayers(outgoingEvent, Dark, Light)
+		match.MessagePlayers(outgoingEvent, Dark, Light)
 	} else {
 		return errors.New("no match")
 	}
