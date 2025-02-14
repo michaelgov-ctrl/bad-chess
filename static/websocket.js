@@ -60,6 +60,25 @@ class ErrorEventMessage {
     }
 }
 
+class Move {
+    movedPiece;
+    targetSquare;
+    capture;
+    playerColor;
+
+    constructor(mp, ts, c, pc) {
+        this.movedPiece = mp;
+        this.targetSquare = ts;
+        this.capture = c;
+        this.playerColor = pc;
+    }
+
+    moveToAlgebraicNotationString() {
+        return this.movedPiece + (this.capture ? "x" : "") + this.targetSquare;
+    }
+}
+
+
 class WebSocketManager {
     socket = null;
     interuptMessage = null;
@@ -147,16 +166,6 @@ class WebSocketManager {
 
                 changePlayer();
                 break;
-            case "propagate_move":
-                console.log("received propagated move:", evtMsg.payload);
-                //console.log("targeted piece if any:", e.target.parentNode.getAttribute("class"))
-                const mv = algToMove(evtMsg.payload.player, evtMsg.payload.MoveEvent.move);
-                console.log(mv);
-                // mv contains that pawn goodness rn
-
-                // TODO: update board with moved piece
-                changePlayer();
-                break;
             case "match_error":
                 this.interuptMessage = evtMsg.payload;
                 break;
@@ -166,166 +175,3 @@ class WebSocketManager {
         }
     }
 }
-
-class Move {
-    startingSquare;
-    movedPiece;
-    targetSquare;
-    targetPiece;
-    capture;
-    playerColor;
-
-    constructor(sSq, mp, ts, tp, c, pc) {
-        this.startingSquare = sSq;
-        this.movedPiece = mp;
-        this.targetSquare = ts;
-        this.targetPiece = tp;
-        this.capture = c;
-        this.playerColor = pc;
-    }
-
-    moveToAlgebraicNotationString() {
-        return this.movedPiece + (this.capture ? "x" : "") + this.targetSquare;
-    }
-}
-
-/*
-propagate move funny business
-class Move {
-    startingSquare;
-    movedPiece;
-    targetSquare;
-    targetPiece;
-    capture;
-    playerColor;
-
-    constructor(sSq, mp, ts, tp, c, pc) {
-        this.startingSquare = sSq;
-        this.movedPiece = mp;
-        this.targetSquare = ts;
-        this.targetPiece = tp;
-        this.capture = c;
-        this.playerColor = pc;
-    }
-
-    moveToAlgebraicNotationString() {
-        return this.movedPiece + (this.capture ? "x" : "") + this.targetSquare;
-    }
-
-    findMovedPiece() {
-        switch (this.movedPiece) {
-            case "K":
-                // TODO: reverse based on valid moves till the piece is found
-                // mv.startingSquare = ;
-                break;
-            case "Q":
-                // TODO: reverse based on valid moves till the piece is found
-                // mv.startingSquare = ;
-                break;
-            case "R":
-                // TODO: reverse based on valid moves till the piece is found
-                // mv.startingSquare = ;
-                break;
-            case "B":
-                // TODO: reverse based on valid moves till the piece is found
-                // mv.startingSquare = ;
-                break;
-            case "N":
-                // TODO: reverse based on valid moves till the piece is found
-                // mv.startingSquare = ;
-                break;
-            default:
-                // these are pawns my dudes
-                if (this.playerColor === "light") {
-                    if ( this.capture ) {
-                        let check = document.querySelector(`[square-id="${this.targetSquare + width - 1}"]`)?.firstChild;
-                        if ( check !== null ) {
-                            this.movedPiece = check;
-                            this.startingSquare = this.targetSquare - width - 1
-                        } else {
-                            this.movedPiece = document.querySelector(`[square-id="${this.targetSquare + width + 1}"]`)?.firstChild;
-                            this.startingSquare = this.targetSquare - width + 1
-                        }
-
-                        return;                        
-                    }
-
-                    for (let i = 1; i < 3; i++) {
-                        let check = document.querySelector(`[square-id="${this.targetSquare + (width * i)}"]`)?.firstChild;
-                        if ( check !== null ) {
-                            this.movedPiece = check
-                            this.startingSquare = this.targetSquare + (width * i)
-
-                            return;
-                        }
-                    }
-                } else {
-                    if ( this.capture ) {
-                        let check = document.querySelector(`[square-id="${this.startingSquare - width - 1 }"]`)?.firstChild;
-                        if ( check !== null ) {
-                            this.movedPiece = check;
-                            this.startingSquare = this.startingSquare - width - 1
-                        } else {
-                            this.movedPiece = document.querySelector(`[square-id="${this.startingSquare - width + 1}"]`)?.firstChild;
-                            this.startingSquare = this.startingSquare - width + 1
-                        }
-
-                        return;
-                    }
-
-                    console.log("dark pawn was moved without capturing")
-                    for (let i = 1; i < 3; i++) {
-                        let check = document.querySelector(`[square-id="${this.targetSquare - (width * i)}"]`)?.firstChild;
-                        console.log(check);
-                        if ( check !== null ) {
-                            this.movedPiece = check
-                            this.startingSquare = this.targetSquare - (width * i)
-                        
-                            return;
-                        }
-                    }
-                }
-
-                break;
-        }
-    }
-}
-
-function algebraicNotationToSquareId(alg) {
-    const file = Number(alg.charCodeAt(0) - 97);
-    const rank = parseInt(alg.charAt(1), 10) - 1;
-    // console.log("file", file, "rank", rank);
-    return (rank * 8) - file;
-}
-
-function algToMove(color, alg) {
-    console.log("player color:", color, "alg move:", alg);
-    let mv = new Move(null, null, null, null, false, color);
-
-    const pieceChars = ["K", "Q", "R", "B", "N"];
-    if ( pieceChars.includes(alg.charAt(0)) ) {
-        mv.movedPiece = alg.charAt(0);
-        if ( alg.charAt(1) === "x" ) {
-            mv.capture = true;
-            mv.targetSquare = algebraicNotationToSquareId(alg.substring(2,4));
-            mv.targetPiece = document.querySelector(`[square-id="${mv.targetSquare}"]`)?.firstChild;
-        } else {
-            mv.targetSquare = algebraicNotationToSquareId(alg.substring(1,3));
-        }
-    } else {
-        mv.movedPiece = alg.charAt(0);
-        if ( alg.charAt(1) === "x" ) {
-            mv.capture = true;
-            console.log(alg.substring(2,4))
-            mv.targetSquare = algebraicNotationToSquareId(alg.substring(2,4));
-            mv.targetPiece = document.querySelector(`[square-id="${mv.targetSquare}"]`)?.firstChild;
-        } else { 
-            mv.targetSquare = algebraicNotationToSquareId(alg.substring(0,2));
-        }
-    }
-
-    mv.findMovedPiece();
-    return mv
-
-}
-*/

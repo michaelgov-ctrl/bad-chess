@@ -189,7 +189,7 @@ var websocketDragDrop = function(wsManager) {
         }    
         
         // generate string for alebraic notation of the move to send to server
-        let algMove = new Move(null, null, null, null);
+        let algMove = new Move(null, null, false);
         const movedPiece = draggedElement.id.substring(draggedElement.id.indexOf("_") + 1);
         algMove.movedPiece = pieceToLetter(movedPiece);
 
