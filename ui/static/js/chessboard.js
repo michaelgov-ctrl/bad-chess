@@ -1,3 +1,4 @@
+const matchInfoDisplay = document.querySelector("#match-info-display");
 const gameBoard = document.querySelector("#gameboard");
 const playerDisplay = document.querySelector("#player");
 const infoDisplay = document.querySelector("#info-display");
@@ -164,7 +165,7 @@ function dragOver(e) {
     e.preventDefault();
 }
 
-var websocketDragDrop = function(wsManager) {
+var websocketDragDrop = function(gameManager) {
     return function dragDrop(e) {
         e.stopPropagation();
 
@@ -194,7 +195,6 @@ var websocketDragDrop = function(wsManager) {
         algMove.movedPiece = pieceToLetter(movedPiece);
 
         if ( algMove.movedPiece === "" && ( validEnPassant(startId, targetId, width) || taken ) ) {
-            // TODO: remove en passanted piece
             algMove.capture = true;
             algMove.movedPiece = squareIdToAlgebraicNotation(startPositionId).charAt(0);
         }
@@ -209,8 +209,8 @@ var websocketDragDrop = function(wsManager) {
         // probably related - consider in the future sending position with error messages
         const evtMsg = new EventMessage("make_move", `{"move":"${algMove.moveToAlgebraicNotationString()}"}`);
 
-        wsManager.send(evtMsg);
-        wsManager.interrupt()
+        gameManager.send(evtMsg);
+        gameManager.interrupt()
             .catch((error) => {
                 temporaryMessage(JSON.stringify(error));
             });

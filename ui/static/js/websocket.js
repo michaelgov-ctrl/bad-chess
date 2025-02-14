@@ -64,13 +64,11 @@ class Move {
     movedPiece;
     targetSquare;
     capture;
-    playerColor;
 
-    constructor(mp, ts, c, pc) {
+    constructor(mp, ts, c) {
         this.movedPiece = mp;
         this.targetSquare = ts;
         this.capture = c;
-        this.playerColor = pc;
     }
 
     moveToAlgebraicNotationString() {
@@ -78,8 +76,55 @@ class Move {
     }
 }
 
+function NewMatch(assignedEvtMsg) {
+    const matchId = assignedEvtMsg.payload?.match_id;
+    const player = assignedEvtMsg.payload?.pieces;
+    if ( matchId === null || player === null ) {
+        throw new Error("things are not working out for the old liz lemon")
+    }
 
-class WebSocketManager {
+    matchInfoDisplay.textContent = "Match ID: " + matchId;
+    createBoard(player);
+
+    const allSquares = document.querySelectorAll(".square");
+    allSquares.forEach( square => {
+        square.addEventListener('dragstart', dragStart);
+        square.addEventListener('dragover', dragOver);
+        square.addEventListener('drop', websocketDragDrop(gameManager));
+    })
+}
+
+function HandlePositionPropagation(propagationEvtMsg) {
+    const fen = propagationEvtMsg.payload?.fen;
+    if ( fen === null ) {
+        throw new Error("something went awry");
+    }
+
+    const currentPosition = fen.substring(0, fen.indexOf(' '));
+    let squareId = 0;
+    for (const c of currentPosition) {
+        if ( c == '/' ) {
+            continue;
+        }
+
+        if (c >= '0' && c <= '8') {
+            for ( let i = 0; i < parseInt(c); i++ ) {
+                const square = document.querySelector(`[square-id="${squareId}"]`).innerHTML = '';
+                squareId++;
+            }
+            continue;
+        }
+
+        const square = document.querySelector(`[square-id="${squareId}"]`);
+        square.innerHTML = fenCharToPiece(c);
+        square.firstChild.setAttribute('draggable', true)
+        squareId++;
+    }
+
+    changePlayer();
+}
+
+class GameManager {
     socket = null;
     interuptMessage = null;
 
@@ -135,42 +180,33 @@ class WebSocketManager {
         }
     
         switch (evtMsg.type) {
+            case "assigned_match":
+                try {
+                    NewMatch(evtMsg);
+                } catch (error) {
+                    this.interuptMessage = error
+                }
+                
+                break;
             case "propagate_position":
-                console.log("received propagated position:", evtMsg.payload);
-                const fen = evtMsg.payload?.fen;
-                if ( fen === null ) {
-                    alert("something went awry");
-                    return;
+                try {
+                    HandlePositionPropagation(evtMsg);
+                } catch (error) {
+                    this.interuptMessage = error;
                 }
 
-                const currentPosition = fen.substring(0, fen.indexOf(' '));
-                let squareId = 0;
-                for (const c of currentPosition) {
-                    if ( c == '/' ) {
-                        continue;
-                    }
+                break;
+            case "match_over":
+                matchInfoDisplay.textContent = "match over";
 
-                    if (c >= '0' && c <= '8') {
-                        for ( let i = 0; i < parseInt(c); i++ ) {
-                            const square = document.querySelector(`[square-id="${squareId}"]`).innerHTML = '';
-                            squareId++;
-                        }
-                        continue;
-                    }
-
-                    const square = document.querySelector(`[square-id="${squareId}"]`);
-                    square.innerHTML = fenCharToPiece(c);
-                    square.firstChild.setAttribute('draggable', true)
-                    squareId++;
-                }
-
-                changePlayer();
                 break;
             case "match_error":
                 this.interuptMessage = evtMsg.payload;
+                
                 break;
             default:
                 console.log('resp:', evtMsg);
+
                 break;
         }
     }

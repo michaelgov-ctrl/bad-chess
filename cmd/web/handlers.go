@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/notnil/chess"
@@ -72,12 +73,7 @@ func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
 			return err
 		}
 
-		// send only to other player, should an accept be sent back to client?
 		// egress is handled in (c *Client) writeMessages()
-		// match.MessagePlayers(outgoingEvent, oppositePlayer(clientPlayerColor))
-
-		// for now message both players, serves as a successful acknowledgement to sender
-		// and notification for opponent
 		match.MessagePlayers(outgoingEvent, Dark, Light)
 	} else {
 		return errors.New("no match")
@@ -111,12 +107,8 @@ func (m *Manager) newMatch(timeControl TimeControl) MatchId {
 	return matchId
 }
 
-/*
-func (m *Manager) PropagateMoveHandler(event Event, c *Client) error {
-	fmt.Printf("event: %v\nclient: %v\n", event, *c)
-	if match, ok := m.matches[c.match]; ok {
-		fmt.Printf("match: %v\n", *match)
-	}
-	return nil
+func pingEndpoint(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(200)
+	w.Write([]byte(`{"status":"copacetic"}`))
 }
-*/
