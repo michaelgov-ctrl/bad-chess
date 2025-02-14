@@ -102,6 +102,10 @@ func (tc TimeControl) ToDuration() time.Duration {
 	return time.Duration(tc)
 }
 
+func (tc TimeControl) String() string {
+	return tc.ToDuration().String()
+}
+
 func (m *Match) ClientPieceColor(client *Client) PieceColor {
 	if m.LightPlayer != nil && m.LightPlayer.Client == client {
 		return Light

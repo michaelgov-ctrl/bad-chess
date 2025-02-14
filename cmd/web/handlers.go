@@ -15,6 +15,12 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	app.render(w, r, http.StatusOK, "home.tmpl.html", data)
 }
 
+func (app *application) matchMakingHandler(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	app.render(w, r, http.StatusOK, "matchmaking.tmpl.html", data)
+}
+
+// TODO: handle url parameter for time
 func (app *application) matchesHandler(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	app.render(w, r, http.StatusOK, "match.tmpl.html", data)

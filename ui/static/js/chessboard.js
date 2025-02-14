@@ -78,11 +78,11 @@ function squareIdToAlgebraicNotation(squareId) {
     return file + rank
 }
 
-function castleToAlgebraicNotation(startId, targetId, playerTurn) {
+function castleToAlgebraicNotation(startId, targetId, playerColor) {
     let defaultStart = 60;
     let defaultKingSide = 62;
     let defaultQueenSide = 58;
-    if ( playerTurn === "dark" ) {
+    if ( playerColor === "dark" ) {
         defaultStart = 4;
         defaultKingSide = 6;
         defaultQueenSide = 2;
@@ -98,58 +98,48 @@ function castleToAlgebraicNotation(startId, targetId, playerTurn) {
     }
 
     return;
- }
+}
 
-function checkIfValidMove(startId, targetId) {
+function checkIfValidMove(startId, targetId, playerColor) {
     const piece = draggedElement.id;
     
     switch(true) {
         case piece.includes("pawn") :
-            if ( piece.includes("light") && validLightPawnMove(startId, targetId, width) ) {
-                // TODO light piece promotion if back rank
-                return true;
+            switch (playerColor) {
+                case "light":
+                    if ( validLightPawnMove(startId, targetId, width) ) {
+                        return true;
+                    }
+                case "dark":
+                    if ( validDarkPawnMove(startId, targetId, width) ) {
+                        return true;
+                    }
             }
-            
-            if ( piece.includes("dark") && validDarkPawnMove(startId, targetId, width) ) {
-                // TODO dark piece promotion if back rank
-                return true;
-            }
-
             break;
-
         case piece.includes("knight") :
             if ( validKnightMove(startId, targetId, width) ) {
                 return true;
             }
-
             break;
-
         case piece.includes("bishop") :
             if ( validBishopMove(startId, targetId, width) ) {
                 return true;
             }
-
             break;
-            
         case piece.includes("rook") :
             if ( validRookMove(startId, targetId, width) ) {
                 return true;
             }
-
             break;
-
         case piece.includes("queen") :
             if ( validBishopMove(startId, targetId, width) || validRookMove(startId, targetId, width) ) {
                 return true;
             }
-
             break;
-
         case piece.includes("king") :
             if ( validKingMove(startId, targetId, width) ) {
                 return true;
             }
-            
             break;
     }
 
@@ -198,7 +188,7 @@ var websocketDragDrop = function(gameManager) {
         
         const startId = Number(startPositionId);
         const targetId = Number(e.target.getAttribute("square-id") || e.target.parentNode.parentNode.getAttribute('square-id'));
-        if ( !checkIfValidMove(startId, targetId) ) {
+        if ( !checkIfValidMove(startId, targetId, playerTurn) ) {
             temporaryMessage("invalid move");
             return
         }
@@ -231,6 +221,11 @@ var websocketDragDrop = function(gameManager) {
                     algMove += "=${popUpValue}"
                 }
                 */
+                if ( validPromotion(targetId, playerTurn) ) {
+                    console.log("valid promotion square reached");
+                    let popUpValue = "Q";
+                    algMove += `=${popUpValue}`;
+                }
                 break;
             case "K":
                 let castleAlg = castleToAlgebraicNotation(startId, targetId, playerTurn);

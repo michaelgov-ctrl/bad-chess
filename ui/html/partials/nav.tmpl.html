@@ -5,6 +5,8 @@
         {{if .IsAuthenticated}}
             <a href='/'>Create meme</a>
         {{end}}
+        <!-- move this into .IsAuthenticated check -->
+        <a href="/matchmaking/">Join a Match</a>
     </div>
     <div>
         {{if .IsAuthenticated}}

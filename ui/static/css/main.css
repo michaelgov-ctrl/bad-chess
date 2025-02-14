@@ -4,15 +4,15 @@ body {
 
 #gameboard {
     display: grid;
-    grid-template-columns: repeat(8, 40px);
-    grid-template-rows: repeat(8, 40px);
-    width: 320px;
-    height: 320px;
+    grid-template-columns: repeat(8, 50px);
+    grid-template-rows: repeat(8, 50px);
+    width: 40px;
+    height: 400px;
 }
 
 .square {
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     position: relative;
 }
 
@@ -25,9 +25,9 @@ body {
 }
 
 .square svg {
-    height: 35px;
-    width: 35px;
-    margin: 5px;
+    height: 48px;
+    width: 48px;
+    margin: 2px;
     position: relative;
     z-index: -9;
 }

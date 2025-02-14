@@ -14,6 +14,7 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("GET /{$}", app.home)
 	mux.HandleFunc("GET /ping", app.pingEndpoint)
 
+	mux.HandleFunc("/matchmaking/", app.matchMakingHandler)
 	mux.HandleFunc("/matches/", app.matchesHandler)
 	mux.HandleFunc("/matches/ws", app.manager.serveWS)
 

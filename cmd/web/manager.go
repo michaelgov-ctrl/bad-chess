@@ -61,6 +61,7 @@ func NewManager(ctx context.Context) *Manager {
 	return m
 }
 
+// TODO: add a handler for joining with a valid match id
 func (m *Manager) registerEventHandlers() {
 	m.handlers[EventJoinMatchRequest] = m.MatchMakingHandler
 	m.handlers[EventMakeMove] = m.MakeMoveHandler

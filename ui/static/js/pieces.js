@@ -432,10 +432,14 @@ const light_rook = `<div class="piece" id="light_rook">
 </svg>
 </div>`
 
+const lightPawnStarterRow = [48,49,50,51,52,53,54,55];
+const lightPawnEndRow = [0,1,2,3,4,5,6,7];
+const darkPawnStarterRow = [8,9,10,11,12,13,14,15];
+const darkPawnEndRow = [56,57,58,59,60,61,62,63];
+
 function validLightPawnMove(startId, targetId, width) {
-   const starterRow = [48,49,50,51,52,53,54,55];
    if (
-      (starterRow.includes(startId) && startId - (width * 2) === targetId) ||
+      (lightPawnStarterRow.includes(startId) && startId - (width * 2) === targetId) ||
       startId - width === targetId ||
       // allow for en passant validation by server for now
       startId - width + 1 === targetId || // && document.querySelector(`[square-id="${startId - width - 1}"]`)?.firstChild?.getAttribute("class") === "piece") ||
@@ -448,9 +452,8 @@ function validLightPawnMove(startId, targetId, width) {
 }
 
 function validDarkPawnMove(startId, targetId, width) {
-   const starterRow = [8,9,10,11,12,13,14,15];
    if (
-      (starterRow.includes(startId) && startId + (width * 2) === targetId) ||
+      (darkPawnStarterRow.includes(startId) && startId + (width * 2) === targetId) ||
       startId + width === targetId ||
       // allow for en passant validation by server for now
       startId + width + 1 === targetId || // && document.querySelector(`[square-id="${startId + width - 1}"]`)?.firstChild?.getAttribute("class") === "piece") ||
@@ -460,6 +463,17 @@ function validDarkPawnMove(startId, targetId, width) {
    }
 
   return false;
+}
+
+function validPromotion(targetId, playerColor) {
+   switch (playerColor) {
+      case "light":
+         return lightPawnEndRow.includes(targetId);
+      case "dark":
+         return darkPawnEndRow.includes(targetId)
+      default:
+         return false;
+   }
 }
 
 function validEnPassant(startId, targetId, width) {

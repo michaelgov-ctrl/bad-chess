@@ -60,24 +60,6 @@ class ErrorEventMessage {
     }
 }
 
-/*
-class Move {
-    movedPiece;
-    targetSquare;
-    capture;
-
-    constructor(mp, ts, c) {
-        this.movedPiece = mp;
-        this.targetSquare = ts;
-        this.capture = c;
-    }
-
-    moveToAlgebraicNotationString() {
-        return this.movedPiece + (this.capture ? "x" : "") + this.targetSquare;
-    }
-}
-*/
-
 function NewMatch(assignedEvtMsg) {
     const matchId = assignedEvtMsg.payload?.match_id;
     const player = assignedEvtMsg.payload?.pieces;
@@ -173,7 +155,7 @@ class GameManager {
                     console.log(msg, this.interuptMessage);
                     reject(msg);
                 }
-            }, 100)
+            }, 200)
         });
     }
 

@@ -1,0 +1,9 @@
+{{define "title"}}Choose a Time Control{{end}}
+
+{{define "main"}}
+    {{range .TimeControls}}
+    <tr>
+        <a href='/matches?timecontrol={{ . }}'><button>{{ .String }}</button></a>
+    </tr>
+    {{end}}
+{{end}}
