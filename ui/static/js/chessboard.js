@@ -216,18 +216,26 @@ var websocketDragDrop = function(gameManager) {
         let pieceChar = pieceToLetter(movedPiece);
         let targetSquare = squareIdToAlgebraicNotation(targetId);
 
-        if ( pieceChar === "" && ( validEnPassant(startId, targetId, width) || taken ) ) {
-            taken = true;
-            pieceChar = squareIdToAlgebraicNotation(startPositionId).charAt(0);
-        }
-
-        // TODO: handle promotions
         let algMove = pieceChar + (taken ? "x" : "") + targetSquare;
-        // LOOK HERE
-        if ( pieceChar === "K" ) {
-            let castleAlg = castleToAlgebraicNotation(startId, targetId, playerTurn);
-            console.log("castle algebraic notation:", castleAlg);
-            algMove = castleAlg ? castleAlg : algMove;
+        switch (pieceChar) {
+            case "":
+                if ( validEnPassant(startId, targetId, width) || taken ) {
+                    taken = true;
+                    pieceChar = squareIdToAlgebraicNotation(startPositionId).charAt(0);
+                }
+                algMove = pieceChar + (taken ? "x" : "") + targetSquare;
+                // TODO: handle promotions
+                /*
+                if ( promotion ) {
+                    display pop up with Q, R, B, N
+                    algMove += "=${popUpValue}"
+                }
+                */
+                break;
+            case "K":
+                let castleAlg = castleToAlgebraicNotation(startId, targetId, playerTurn);
+                algMove = castleAlg ? castleAlg : algMove;
+                break;
         }
 
         let evtMsg = new EventMessage("make_move", `{"move":"${algMove}"}`);
