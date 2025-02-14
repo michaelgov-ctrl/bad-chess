@@ -6,4 +6,4 @@ gameManager.connect();
 setTimeout(function(){
     const evtMsg = new EventMessage("join_match", '{"time_control":"20m"}');
     gameManager.send(evtMsg);
-}, 2000);
+}, 100);

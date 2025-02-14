@@ -78,6 +78,28 @@ function squareIdToAlgebraicNotation(squareId) {
     return file + rank
 }
 
+function castleToAlgebraicNotation(startId, targetId, playerTurn) {
+    let defaultStart = 60;
+    let defaultKingSide = 62;
+    let defaultQueenSide = 58;
+    if ( playerTurn === "dark" ) {
+        defaultStart = 4;
+        defaultKingSide = 6;
+        defaultQueenSide = 2;
+    }
+
+    if ( startId === defaultStart ) {
+        switch (targetId) {
+            case defaultKingSide:
+                return "O-O";
+            case defaultQueenSide:
+                return "O-O-O";
+        }
+    }
+
+    return;
+ }
+
 function checkIfValidMove(startId, targetId) {
     const piece = draggedElement.id;
     
@@ -181,7 +203,7 @@ var websocketDragDrop = function(gameManager) {
             return
         }
 
-        const taken = e.target.parentNode.getAttribute("class")?.includes("piece");
+        let taken = e.target.parentNode.getAttribute("class")?.includes("piece");
         const opponent = playerTurn === "light" ? "dark" : "light";
         const containsOpponent = e.target.parentNode.getAttribute("id").includes(opponent);
         if ( taken && !containsOpponent ) {
@@ -190,24 +212,25 @@ var websocketDragDrop = function(gameManager) {
         }    
         
         // generate string for alebraic notation of the move to send to server
-        let algMove = new Move(null, null, false);
-        const movedPiece = draggedElement.id.substring(draggedElement.id.indexOf("_") + 1);
-        algMove.movedPiece = pieceToLetter(movedPiece);
+        let movedPiece = draggedElement.id.substring(draggedElement.id.indexOf("_") + 1);
+        let pieceChar = pieceToLetter(movedPiece);
+        let targetSquare = squareIdToAlgebraicNotation(targetId);
 
-        if ( algMove.movedPiece === "" && ( validEnPassant(startId, targetId, width) || taken ) ) {
-            algMove.capture = true;
-            algMove.movedPiece = squareIdToAlgebraicNotation(startPositionId).charAt(0);
+        if ( pieceChar === "" && ( validEnPassant(startId, targetId, width) || taken ) ) {
+            taken = true;
+            pieceChar = squareIdToAlgebraicNotation(startPositionId).charAt(0);
         }
-
-        if ( taken ) {
-            algMove.capture = true;
-        }
-
-        algMove.targetSquare = squareIdToAlgebraicNotation(targetId);
 
         // TODO: handle promotions
-        // probably related - consider in the future sending position with error messages
-        const evtMsg = new EventMessage("make_move", `{"move":"${algMove.moveToAlgebraicNotationString()}"}`);
+        let algMove = pieceChar + (taken ? "x" : "") + targetSquare;
+        // LOOK HERE
+        if ( pieceChar === "K" ) {
+            let castleAlg = castleToAlgebraicNotation(startId, targetId, playerTurn);
+            console.log("castle algebraic notation:", castleAlg);
+            algMove = castleAlg ? castleAlg : algMove;
+        }
+
+        let evtMsg = new EventMessage("make_move", `{"move":"${algMove}"}`);
 
         gameManager.send(evtMsg);
         gameManager.interrupt()

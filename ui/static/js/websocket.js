@@ -60,6 +60,7 @@ class ErrorEventMessage {
     }
 }
 
+/*
 class Move {
     movedPiece;
     targetSquare;
@@ -75,6 +76,7 @@ class Move {
         return this.movedPiece + (this.capture ? "x" : "") + this.targetSquare;
     }
 }
+*/
 
 function NewMatch(assignedEvtMsg) {
     const matchId = assignedEvtMsg.payload?.match_id;

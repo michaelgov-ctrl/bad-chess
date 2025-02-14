@@ -584,6 +584,9 @@ function validKingMove(startId, targetId, width) {
    if (
       startId + 1 === targetId ||
       startId - 1 === targetId ||
+      // let server handle castling validation for now
+      startId + 2 === targetId ||
+      startId - 2 === targetId ||
       startId + width === targetId ||
       startId - width === targetId ||
       startId + width + 1 === targetId ||
