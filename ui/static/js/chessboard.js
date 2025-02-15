@@ -168,6 +168,30 @@ function temporaryMessage(msg) {
     setTimeout(() => infoDisplay.textContent = "", 2000)
 }
 
+function showPromotionWindow() {
+    return new Promise((resolve) => {
+        document.getElementById("promotion-window").style.display = "block";
+
+        document.getElementById("promote-to-queen").onclick = () => resolveChoice("Q", resolve);
+        document.getElementById("promote-to-rook").onclick = () => resolveChoice("R", resolve);
+        document.getElementById("promote-to-bishop").onclick = () => resolveChoice("B", resolve);
+        document.getElementById("promote-to-knight").onclick = () => resolveChoice("N", resolve);
+    });
+}
+
+function resolveChoice(choice, resolve) {
+    hidePromotionWindow();
+    resolve(choice);
+}
+
+function hidePromotionWindow() {
+    document.getElementById("promotion-window").style.display = "none";
+}
+
+function handleChoice(choice) {
+    hidePromotionWindow();
+}
+
 function dragStart(e) {
     draggedElement = e.target;
     startPositionId = e.target.parentNode.getAttribute('square-id');
@@ -178,7 +202,7 @@ function dragOver(e) {
 }
 
 var websocketDragDrop = function(gameManager) {
-    return function dragDrop(e) {
+    return async function dragDrop(e) {
         e.stopPropagation();
 
         if ( !draggedElement.getAttribute('id').includes(playerTurn) ) {
@@ -214,16 +238,9 @@ var websocketDragDrop = function(gameManager) {
                     pieceChar = squareIdToAlgebraicNotation(startPositionId).charAt(0);
                 }
                 algMove = pieceChar + (taken ? "x" : "") + targetSquare;
-                // TODO: handle promotions
-                /*
-                if ( promotion ) {
-                    display pop up with Q, R, B, N
-                    algMove += "=${popUpValue}"
-                }
-                */
+                
                 if ( validPromotion(targetId, playerTurn) ) {
-                    console.log("valid promotion square reached");
-                    let popUpValue = "Q";
+                    let popUpValue = await showPromotionWindow();
                     algMove += `=${popUpValue}`;
                 }
                 break;

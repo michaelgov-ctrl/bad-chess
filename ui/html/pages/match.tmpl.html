@@ -2,6 +2,17 @@
 
 {{define "main"}}
     <p id="match-info-display"></p>
+    <div id="promotion-window" class="promotion-window">
+        <div class="promotion-window-content">
+            <span class="close" onclick="hideModal()">&times;</span>
+            <p>Choose piece to promote to:</p>
+            <!-- TODO: change buttons to svg of piece -->
+            <button id="promote-to-queen">Queen</button>
+            <button id="promote-to-rook">Rook</button>
+            <button id="promote-to-bishop">Bishop</button>
+            <button id="promote-to-knight">Knight</button>
+        </div>
+    </div>
     <div id="gameboard"></div>
     <p>It is <span id="player"></span>'s turn.</p>
     <p id="info-display"></p>

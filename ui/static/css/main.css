@@ -39,5 +39,47 @@ path {
 
 .piece {
     position: relative;
-    z-index: 9;
+    z-index: 10;
+}
+
+.promotion-window {
+    display: none;
+    position: relative;
+    background-color: wheat;
+    z-index: 100;
+}
+
+.promotion-window-content {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: wheat;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+}
+
+.close {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+/* Buttons */
+.modal-content button {
+    margin: 5px;
+    padding: 10px 20px;
+    border: none;
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.modal-content button:hover {
+    background: #0056b3;
 }
