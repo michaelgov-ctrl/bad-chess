@@ -20,7 +20,7 @@ type Client struct {
 
 	currentMatch ClientMatchInfo
 
-	// egress is used to avoid concurrent writes on the websocket connection
+	// egress is used to avoid concurrent writes on the websocket connection for events
 	egress chan Event
 }
 
@@ -113,8 +113,6 @@ func (c *Client) writeEvents(logger *slog.Logger) {
 
 			logger.Info("message sent")
 		case <-ticker.C:
-			//log.Println("ping")
-
 			if err := c.connection.WriteMessage(websocket.PingMessage, []byte(``)); err != nil {
 				logger.Error("ping error", "error", err)
 				return
@@ -126,4 +124,18 @@ func (c *Client) writeEvents(logger *slog.Logger) {
 func (c *Client) pongHandler(pongMsg string) error {
 	//log.Println("pong")
 	return c.connection.SetReadDeadline(time.Now().Add(pongWait))
+}
+
+func (c *Client) CloseConn(msg string) error {
+	if c.connection == nil {
+		return fmt.Errorf("connection for client is nil")
+	}
+
+	_ = c.connection.WriteControl(
+		websocket.CloseMessage,
+		websocket.FormatCloseMessage(websocket.CloseNormalClosure, msg),
+		time.Now().Add(time.Second),
+	)
+
+	return c.connection.Close()
 }

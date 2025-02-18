@@ -132,8 +132,6 @@ function HandleClockUpdate(clockUpdateEvtMsg) {
     } else {
         opponentClock.textContent = truncatedTime + "s";
     }
-
-    console.log(clockOwner, timeRemaining)
 }
 
 class GameManager {
@@ -158,7 +156,9 @@ class GameManager {
         });
 
         this.socket.addEventListener('close', (c) => {
-            console.log('ws conn closed', c);
+            console.log("ws conn closed", c)
+            matchInfoDisplay.textContent = "match over";
+            turnDisplay.textContent = "";
             this.socket = null;
         });
     }
@@ -175,13 +175,11 @@ class GameManager {
     interrupt() {
         return new Promise((resolve, reject) => {
             setTimeout(() => {
-                // if ( this.interuptMessage === null ) {
                 if ( !this.interuptMessage ) {    
                     resolve("success");
                 } else {
                     const msg = this.interuptMessage;
                     this.interuptMessage = null;
-                    console.log(msg, this.interuptMessage);
                     reject(msg);
                 }
             }, 200)
@@ -212,7 +210,8 @@ class GameManager {
                 break;
             case "match_over":
                 matchInfoDisplay.textContent = "match over";
-                // TODO: close the websocket
+                turnDisplay.textContent = "";
+                this.socket.close(1000, 'User initiated closure');
                 break;
             case "match_error":
                 this.interuptMessage = evtMsg.payload;
@@ -227,8 +226,6 @@ class GameManager {
 
                 break;
             default:
-                console.log('resp:', evtMsg);
-
                 break;
         }
     }

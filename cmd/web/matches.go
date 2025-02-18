@@ -12,6 +12,7 @@ import (
 var (
 	SupportedTimeControls = map[TimeControl]bool{
 		TimeControl(1 * float64(time.Minute)):  true, // 1 minute
+		TimeControl(3 * float64(time.Minute)):  true, // 3 minutes
 		TimeControl(5 * float64(time.Minute)):  true, // 5 minutes
 		TimeControl(10 * float64(time.Minute)): true, // 10 minutes
 		TimeControl(20 * float64(time.Minute)): true, // 20 minutes
@@ -378,6 +379,29 @@ func (m *Match) MessagePlayers(event Event, players ...PieceColor) {
 		case Dark:
 			if m.DarkPlayer != nil && m.DarkPlayer.Client != nil {
 				m.DarkPlayer.Client.egress <- event
+			}
+		}
+	}
+}
+
+func (m *Match) DisconnectPlayers(msg string, players ...PieceColor) {
+	for _, color := range players {
+		switch color {
+		case Light:
+			if m.LightPlayer != nil && m.LightPlayer.Client != nil {
+				if err := m.LightPlayer.Client.CloseConn(msg); err != nil {
+					// TODO: fix this when i setup passing structured logger to match
+					// logger.Error("connection closed", "error", err)
+				}
+				m.LightPlayer.Client.manager.removeClient(m.LightPlayer.Client)
+			}
+		case Dark:
+			if m.DarkPlayer != nil && m.DarkPlayer.Client != nil {
+				if err := m.DarkPlayer.Client.CloseConn(msg); err != nil {
+					// TODO: fix this when i setup passing structured logger to match
+					// logger.Error("connection closed", "error", err)
+				}
+				m.DarkPlayer.Client.manager.removeClient(m.DarkPlayer.Client)
 			}
 		}
 	}

@@ -69,7 +69,7 @@ func (m *Manager) registerEventHandlers() {
 }
 
 func (m *Manager) registerSupportedTimeControls() {
-	for tc, _ := range SupportedTimeControls {
+	for tc := range SupportedTimeControls {
 		m.matches[tc] = make(MatchList)
 	}
 }
@@ -121,6 +121,8 @@ func (m *Manager) routeEvent(event Event, c *Client) error {
 	return nil
 }
 
+// From the context of games coming from the website it makes sense to close client connections here
+// TODO: it should be more graceful
 func (m *Manager) cleanupMatches() {
 	cleanupTime, finishedMatches := time.NewTicker(5*time.Second), []MatchOutcome{}
 	for {
@@ -137,6 +139,7 @@ func (m *Manager) cleanupMatches() {
 				m.logger.Info("removing match from manager", "match info", finishedMatch)
 				if match, ok := m.matches[finishedMatch.TimeControl][finishedMatch.ID]; ok {
 					match.MessagePlayers(Event{Type: EventMatchOver}, Light, Dark)
+					match.DisconnectPlayers("", Light, Dark)
 				}
 
 				delete(m.matches[finishedMatch.TimeControl], finishedMatch.ID)
