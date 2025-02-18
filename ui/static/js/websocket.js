@@ -189,6 +189,10 @@ class GameManager {
                 this.interuptMessage = evtMsg.payload;
                 
                 break;
+            case "clock_update":
+                
+
+                break;
             default:
                 console.log('resp:', evtMsg);
 

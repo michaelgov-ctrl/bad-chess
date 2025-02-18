@@ -250,13 +250,20 @@ func (m *Match) MakeMove(pieces PieceColor, move string) error {
 		return fmt.Errorf("invalid move: %w", err)
 	}
 
-	m.swapRunningClock(pieces)
-	m.Turn = oppositePlayer(pieces)
+	if err := m.swapRunningClock(pieces); err != nil {
+		return err
+	}
+
+	m.Turn = OpponentPieceColor(pieces)
 
 	return nil
 }
 
-func (m *Match) swapRunningClock(pieces PieceColor) {
+func (m *Match) swapRunningClock(pieces PieceColor) error {
+	if m.LightPlayer.Clock == nil || m.DarkPlayer.Clock == nil {
+		return fmt.Errorf("nil player clock")
+	}
+
 	switch pieces {
 	case Light:
 		m.LightPlayer.Clock.Pause()
@@ -265,6 +272,8 @@ func (m *Match) swapRunningClock(pieces PieceColor) {
 		m.DarkPlayer.Clock.Pause()
 		m.LightPlayer.Clock.Start()
 	}
+
+	return nil
 }
 
 func (pc PieceColor) String() string {
@@ -324,7 +333,22 @@ func (pc *PieceColor) UnmarshalJSON(b []byte) error {
 	}
 }
 
-func oppositePlayer(pieces PieceColor) PieceColor {
+func (m *Match) OpponentPresent(pieces PieceColor) bool {
+	switch pieces {
+	case Light:
+		if m.DarkPlayer != nil {
+			return true
+		}
+	case Dark:
+		if m.LightPlayer != nil {
+			return true
+		}
+	}
+
+	return false
+}
+
+func OpponentPieceColor(pieces PieceColor) PieceColor {
 	switch pieces {
 	case Light:
 		return Dark

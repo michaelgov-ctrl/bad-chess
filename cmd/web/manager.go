@@ -228,6 +228,11 @@ func (m *Manager) MakeMoveHandler(event Event, c *Client) error {
 	defer m.matchesMu.RUnlock()
 	if match, ok := m.matches[c.currentMatch.TimeControl][c.currentMatch.ID]; ok {
 		clientPlayerColor := match.ClientPieceColor(c)
+
+		if !match.OpponentPresent(clientPlayerColor) {
+			return fmt.Errorf("no opponent present")
+		}
+
 		if clientPlayerColor == NoColor || clientPlayerColor != c.currentMatch.Pieces {
 			return fmt.Errorf("player pieces are borked")
 		}
