@@ -31,7 +31,6 @@ var (
 	}
 )
 
-// TODO: evaluate passing the application logger as the Manager's logger
 type Manager struct {
 	logger *slog.Logger
 
@@ -45,14 +44,25 @@ type Manager struct {
 	handlers map[string]EventHandler
 }
 
-func NewManager(ctx context.Context) *Manager {
+type ManagerOptions func(*Manager)
+
+func WithLogger(logger *slog.Logger) ManagerOptions {
+	return func(m *Manager) {
+		m.logger = logger
+	}
+}
+
+func NewManager(ctx context.Context, opts ...ManagerOptions) *Manager {
 	m := &Manager{
-		logger:  slog.New(slog.NewTextHandler(os.Stdout, nil)),
-		clients: make(ClientList),
-		//matches:          make(MatchList),
+		logger:           slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		clients:          make(ClientList),
 		matches:          make(TimeControlMatchList),
 		matchCleanupChan: make(chan MatchOutcome),
 		handlers:         make(map[string]EventHandler),
+	}
+
+	for _, opt := range opts {
+		opt(m)
 	}
 
 	m.registerSupportedTimeControls()

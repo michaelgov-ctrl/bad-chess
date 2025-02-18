@@ -122,7 +122,6 @@ func (c *Client) writeEvents(logger *slog.Logger) {
 }
 
 func (c *Client) pongHandler(pongMsg string) error {
-	//log.Println("pong")
 	return c.connection.SetReadDeadline(time.Now().Add(pongWait))
 }
 

@@ -35,6 +35,7 @@ func main() {
 	flag.IntVar(&cfg.port, "port", 8080, "API server port")
 	flag.StringVar(&cfg.logLevel, "log-level", "error", "Logging level (trace|debug|info|warning|error)")
 
+	// TODO: implement rate limiter
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 20, "Rate limiter maximum requests per second")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 40, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
@@ -57,7 +58,7 @@ func main() {
 	app := &application{
 		config:        cfg,
 		logger:        logger,
-		manager:       NewManager(context.Background()),
+		manager:       NewManager(context.Background(), WithLogger(logger)),
 		templateCache: templateCache,
 	}
 
