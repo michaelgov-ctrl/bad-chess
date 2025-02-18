@@ -12,6 +12,21 @@
     height: 400px;
 }
 
+/*
+TODO: figure out how to place these appropriately
+*/
+#opponent_clock {
+    position: absolute;
+    top: 10% auto;
+    right: 10% auto;
+}
+
+#player_clock {
+    position: absolute;
+    bottom: 10% auto;
+    right: 10% auto;
+}
+
 .square {
     width: 50px;
     height: 50px;

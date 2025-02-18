@@ -7,7 +7,7 @@ gameManager.connect();
 // websocket manager. TODO: look into that.
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
-const timecontrol = urlParams.get('timecontrol')
+const timecontrol = urlParams.get('timecontrol');
 
 setTimeout(function(){
     const evtMsg = new EventMessage("join_match", `{"time_control":"${timecontrol}"}`);

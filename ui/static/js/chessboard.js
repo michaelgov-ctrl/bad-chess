@@ -2,6 +2,8 @@ const matchInfoDisplay = document.querySelector("#match-info-display");
 const gameBoard = document.querySelector("#gameboard");
 const playerDisplay = document.querySelector("#player");
 const infoDisplay = document.querySelector("#info-display");
+const playerClock = document.querySelector("#player_clock");
+const opponentClock = document.querySelector("#opponent_clock");
 const width = 8;
 
 // these can & probably should be dynamically created perspectives, maybe...?
@@ -29,6 +31,7 @@ const startPiecesDarkPerspective = [
 
 let playerTurn = 'light';
 playerDisplay.textContent = playerTurn;
+let playerPieces = null;
 let startPositionId = null;
 let draggedElement = null;
 
@@ -50,6 +53,8 @@ function setBoard(piece, i) {
 }
 
 function createBoard(perspective) {
+    playerPieces = perspective;
+
     if ( perspective === "light" ) {
         startPiecesLightPerspective.forEach((piece, i) => {
             setBoard(piece, i);
@@ -218,7 +223,8 @@ var websocketDragDrop = function(gameManager) {
         }
 
         let taken = e.target.parentNode.getAttribute("class")?.includes("piece");
-        const opponent = playerTurn === "light" ? "dark" : "light";
+        //const opponent = playerTurn === "light" ? "dark" : "light";
+        const opponent = playerPieces === "light" ? "dark" : "light";
         const containsOpponent = e.target.parentNode.getAttribute("id").includes(opponent);
         if ( taken && !containsOpponent ) {
             temporaryMessage("invalid move");

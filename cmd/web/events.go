@@ -25,6 +25,11 @@ const (
 	EventPropagatePosition = "propagate_position"
 )
 
+type ClockUpdateEvent struct {
+	ClockOwner    string `json:"clock_owner"`
+	TimeRemaining string `json:"time_remaining"`
+}
+
 type JoinMatchEvent struct {
 	TimeControl TimeControl `json:"time_control"`
 }
@@ -46,11 +51,6 @@ type PropagatePositionEvent struct {
 
 type ErrorEvent struct {
 	Error string `json:"error"`
-}
-
-type ClockUpdateEvent struct {
-	ClockOwner    string `json:"clock_owner"`
-	TimeRemaining string `json:"time_remaining"`
 }
 
 func NewOutgoingEvent(t string, evt any) (Event, error) {

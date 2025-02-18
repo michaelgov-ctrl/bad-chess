@@ -142,6 +142,7 @@ func (m *Match) Start(cleanupChan chan<- MatchOutcome) error {
 
 	m.LightPlayer.Clock = NewClock(m.TimeControl)
 	m.DarkPlayer.Clock = NewClock(m.TimeControl)
+	m.DarkPlayer.Clock.Pause()
 	go m.sendClockUpdates()
 
 	return nil

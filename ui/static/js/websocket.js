@@ -60,10 +60,13 @@ class ErrorEventMessage {
     }
 }
 
+// TODO: cast received messages to appropriate class
+
 function NewMatch(assignedEvtMsg) {
     const matchId = assignedEvtMsg.payload?.match_id;
     const player = assignedEvtMsg.payload?.pieces;
-    if ( matchId === null || player === null ) {
+    // if ( matchId === null || player === null ) {
+    if ( !matchId || !player ) {
         throw new Error("things are not working out for the old liz lemon")
     }
 
@@ -76,11 +79,19 @@ function NewMatch(assignedEvtMsg) {
         square.addEventListener('dragover', dragOver);
         square.addEventListener('drop', websocketDragDrop(gameManager));
     })
+
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const timecontrol = urlParams.get('timecontrol');
+    
+    playerClock.textContent = timecontrol;
+    opponentClock.textContent = timecontrol;
 }
 
 function HandlePositionPropagation(propagationEvtMsg) {
     const fen = propagationEvtMsg.payload?.fen;
-    if ( fen === null ) {
+    //if ( fen === null ) {
+    if ( !fen ) {
         throw new Error("something went awry");
     }
 
@@ -106,6 +117,23 @@ function HandlePositionPropagation(propagationEvtMsg) {
     }
 
     changePlayer();
+}
+
+function HandleClockUpdate(clockUpdateEvtMsg) {
+    const clockOwner = clockUpdateEvtMsg.payload?.clock_owner;
+    const timeRemaining = clockUpdateEvtMsg.payload?.time_remaining;
+    if ( !clockOwner || !timeRemaining ) {
+        throw new Error("good god lemon");
+    }
+
+    const truncatedTime = timeRemaining.substring(0, timeRemaining.indexOf("."));
+    if ( playerPieces === clockOwner ) {
+        playerClock.textContent = truncatedTime + "s";
+    } else {
+        opponentClock.textContent = truncatedTime + "s";
+    }
+
+    console.log(clockOwner, timeRemaining)
 }
 
 class GameManager {
@@ -147,7 +175,8 @@ class GameManager {
     interrupt() {
         return new Promise((resolve, reject) => {
             setTimeout(() => {
-                if ( this.interuptMessage === null ) {
+                // if ( this.interuptMessage === null ) {
+                if ( !this.interuptMessage ) {    
                     resolve("success");
                 } else {
                     const msg = this.interuptMessage;
@@ -190,7 +219,11 @@ class GameManager {
                 
                 break;
             case "clock_update":
-                
+                try {
+                    HandleClockUpdate(evtMsg);
+                } catch (error) {
+                    this.interuptMessage = error;
+                }
 
                 break;
             default:
