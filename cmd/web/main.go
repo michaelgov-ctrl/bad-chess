@@ -47,7 +47,7 @@ func main() {
 
 	flag.Parse()
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel(cfg.logLevel)}))
 
 	templateCache, err := newTemplateCache()
 	if err != nil {
