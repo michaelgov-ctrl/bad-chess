@@ -31,6 +31,7 @@ var (
 	}
 )
 
+// TODO: evaluate passing the application logger as the Manager's logger
 type Manager struct {
 	logger *slog.Logger
 

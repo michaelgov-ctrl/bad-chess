@@ -56,6 +56,7 @@ const (
 )
 
 // TODO: Spectators  []*Client
+// TODO: evaluate passing the application logger to each match for logging
 type Match struct {
 	ID MatchId
 
@@ -141,8 +142,48 @@ func (m *Match) Start(cleanupChan chan<- MatchOutcome) error {
 
 	m.LightPlayer.Clock = NewClock(m.TimeControl)
 	m.DarkPlayer.Clock = NewClock(m.TimeControl)
+	go m.sendClockUpdates()
 
 	return nil
+}
+
+// this only sends updates for the active clock to reduce unnecessary chatter
+// this is susceptible to races on accessing match state and player turn as they're being updated
+// but I dont think I have to care
+func (m *Match) sendClockUpdates() {
+	for m.State != Over {
+		time.Sleep(1 * time.Second)
+		if m.LightPlayer == nil || m.DarkPlayer == nil {
+			return
+		}
+
+		var evt ClockUpdateEvent
+		switch m.Turn {
+		case Light:
+			evt.ClockOwner = Light.String()
+			if m.LightPlayer.Clock != nil {
+				evt.TimeRemaining = m.LightPlayer.Clock.TimeRemaining().String()
+			} else {
+				return
+			}
+		case Dark:
+			evt.ClockOwner = Dark.String()
+			if m.DarkPlayer.Clock != nil {
+				evt.TimeRemaining = m.DarkPlayer.Clock.TimeRemaining().String()
+			} else {
+				return
+			}
+		default:
+			return
+		}
+
+		outgoingEvent, err := NewOutgoingEvent(EventClockUpdate, evt)
+		if err != nil {
+			return
+		}
+
+		m.MessagePlayers(outgoingEvent, Light, Dark)
+	}
 }
 
 func (m *Match) notifyWhenOver(cleanupChan chan<- MatchOutcome) {
@@ -254,6 +295,7 @@ func (pc PieceColor) MarshalJSON() ([]byte, error) {
 	return json.Marshal(pc.String())
 }
 
+// TODO: what am i doing here
 func (pc *PieceColor) UnmarshalJSON(b []byte) error {
 	var v any
 	if err := json.Unmarshal(b, &v); err != nil {

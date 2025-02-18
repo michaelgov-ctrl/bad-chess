@@ -32,11 +32,16 @@ func NewClock(timeControl TimeControl) *Clock {
 		state:    running,
 	}
 
-	ticker := time.NewTicker(100 * time.Millisecond)
+	ticker := time.NewTicker(500 * time.Millisecond)
 	go func() {
 		for range ticker.C {
 			clock.Lock()
-			if clock.lifeTime <= (clock.elapsed + time.Since(clock.started)) {
+			if clock.state == running {
+				clock.elapsed += time.Since(clock.started)
+				clock.started = time.Now()
+			}
+
+			if clock.lifeTime <= clock.elapsed {
 				clock.state = expired
 				doneChan <- time.Now()
 				close(doneChan)
@@ -57,8 +62,8 @@ func (c *Clock) Pause() {
 		return
 	}
 
-	c.state = paused
 	c.elapsed += time.Since(c.started)
+	c.state = paused
 }
 
 func (c *Clock) Start() {
@@ -71,4 +76,8 @@ func (c *Clock) Start() {
 
 	c.state = running
 	c.started = time.Now()
+}
+
+func (c *Clock) TimeRemaining() time.Duration {
+	return c.lifeTime - c.elapsed
 }

@@ -14,10 +14,11 @@ type EventHandler func(event Event, c *Client) error
 
 const (
 	EventAssignedMatch     = "assigned_match"
-	EventMatchOver         = "match_over"
-	EventMatchStarted      = "match_started"
+	EventClockUpdate       = "clock_update"
 	EventJoinMatchRequest  = "join_match"
 	EventMakeMove          = "make_move"
+	EventMatchOver         = "match_over"
+	EventMatchStarted      = "match_started"
 	EventMatchError        = "match_error"
 	EventNewMatchRequest   = "new_match"
 	EventPropagateMove     = "propagate_move"
@@ -45,6 +46,11 @@ type PropagatePositionEvent struct {
 
 type ErrorEvent struct {
 	Error string `json:"error"`
+}
+
+type ClockUpdateEvent struct {
+	ClockOwner    string `json:"clock_owner"`
+	TimeRemaining string `json:"time_remaining"`
 }
 
 func NewOutgoingEvent(t string, evt any) (Event, error) {

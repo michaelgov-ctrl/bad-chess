@@ -183,7 +183,7 @@ class GameManager {
                 break;
             case "match_over":
                 matchInfoDisplay.textContent = "match over";
-
+                // TODO: close the websocket
                 break;
             case "match_error":
                 this.interuptMessage = evtMsg.payload;
