@@ -69,7 +69,7 @@ nav a:hover {
 }
 
 nav button {
-    background-color: #ff4444;
+    background-color: rgb(31, 31, 173);
     color: white;
     border: none;
     padding: 8px 12px;
@@ -113,6 +113,15 @@ main {
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+div.flash {
+    color: #FFFFFF;
+    font-weight: bold;
+    background-color: #5e6272;
+    padding: 18px;
+    margin-bottom: 36px;
+    text-align: center;
 }
 
 footer {

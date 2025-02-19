@@ -3,28 +3,34 @@ package main
 import (
 	"net/http"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 	"github.com/michaelgov-ctrl/bad-chess/ui"
 )
 
 func (app *application) routes() http.Handler {
-	mux := http.NewServeMux()
+	router := httprouter.New()
 
-	mux.Handle("GET /static/", http.FileServerFS(ui.Files))
+	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		app.notFound(w)
+	})
 
-	dynamic := alice.New(app.sessionManager.LoadAndSave)
+	router.Handler(http.MethodGet, "/static/*filepath", http.FileServerFS(ui.Files))
 
-	mux.Handle("GET /", dynamic.ThenFunc(app.home))
+	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
+	protected := dynamic.Append(app.requireAuthentication)
 
-	mux.Handle("GET /matchmaking", dynamic.ThenFunc(app.matchMakingHandler))
-	mux.Handle("GET /matches/", dynamic.ThenFunc(app.matchesHandler))
-	mux.Handle("GET /matches/ws", dynamic.ThenFunc(app.gameManager.serveWS))
+	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
 
-	mux.Handle("GET /user/login", dynamic.ThenFunc(app.userLogin))
-	mux.Handle("POST /user/login", dynamic.ThenFunc(app.userLoginPost))
-	mux.Handle("POST /user/logout", dynamic.ThenFunc(app.userLogoutPost))
+	router.Handler(http.MethodGet, "/matchmaking", protected.ThenFunc(app.matchMakingHandler))
+	router.Handler(http.MethodGet, "/matches", protected.ThenFunc(app.matchesHandler))
+	router.Handler(http.MethodGet, "/matches/ws", protected.ThenFunc(app.gameManager.serveWS))
+
+	router.Handler(http.MethodGet, "/user/login", dynamic.ThenFunc(app.userLogin))
+	router.Handler(http.MethodPost, "/user/login", dynamic.ThenFunc(app.userLoginPost))
+	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogoutPost))
 
 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 
-	return standard.Then(mux)
+	return standard.Then(router)
 }

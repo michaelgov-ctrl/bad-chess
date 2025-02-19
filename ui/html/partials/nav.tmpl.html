@@ -3,10 +3,8 @@
     <div>
         <a href='/'>Home</a>
         {{if .IsAuthenticated}}
-            <a href='/'>Create meme</a>
+            <a href="/matchmaking">Join a Match</a>
         {{end}}
-        <!-- move this into .IsAuthenticated check -->
-        <a href="/matchmaking">Join a Match</a>
     </div>
     <div>
         {{if .IsAuthenticated}}
@@ -16,9 +14,6 @@
             </form>
         {{else}}
             <a href='/user/login'>Login</a>
-            <form action='/user/logout' method='POST'>
-                <button>Logout</button>
-            </form>
         {{end}}
     </div>
 </nav>

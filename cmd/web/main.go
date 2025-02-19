@@ -7,9 +7,9 @@ import (
 	"log/slog"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/alexedwards/scs/v2"
+	"github.com/go-playground/form/v4"
 	"github.com/michaelgov-ctrl/bad-chess/internal/models"
 )
 
@@ -28,6 +28,7 @@ type application struct {
 	gameManager    *Manager
 	sessionManager *scs.SessionManager
 	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
 }
 
 func main() {
@@ -52,7 +53,7 @@ func main() {
 	}
 
 	sessionManager := scs.New()
-	sessionManager.Lifetime = 3 * time.Hour
+	sessionManager.Lifetime = models.MaxSessionAge
 	sessionManager.Cookie.Secure = true
 
 	app := &application{
@@ -62,6 +63,7 @@ func main() {
 		gameManager:    NewManager(context.Background(), WithLogger(logger)),
 		sessionManager: sessionManager,
 		templateCache:  templateCache,
+		formDecoder:    form.NewDecoder(),
 	}
 
 	// if err := app.serveTLS("", ""); err != nil {

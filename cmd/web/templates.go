@@ -7,17 +7,23 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/justinas/nosurf"
 	"github.com/michaelgov-ctrl/bad-chess/ui"
 )
 
 type templateData struct {
 	IsAuthenticated bool
+	CSRFToken       string
+	Flash           string
+	Form            any
 	TimeControls    []TimeControl
 }
 
 func (app *application) newTemplateData(r *http.Request) templateData {
 	var td = templateData{
-		IsAuthenticated: false,
+		IsAuthenticated: app.isAuthenticated(r),
+		CSRFToken:       nosurf.Token(r),
+		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
 		TimeControls:    []TimeControl{},
 	}
 
