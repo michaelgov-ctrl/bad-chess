@@ -15,13 +15,13 @@
 /*
 TODO: figure out how to place these appropriately
 */
-#opponent_clock {
+#opponent-clock {
     position: absolute;
     top: 10% auto;
     right: 10% auto;
 }
 
-#player_clock {
+#player-clock {
     position: absolute;
     bottom: 10% auto;
     right: 10% auto;
@@ -33,11 +33,11 @@ TODO: figure out how to place these appropriately
     position: relative;
 }
 
-.light {
+.light-square {
     background-color: #f0d9b5;
 }
 
-.dark {
+.dark-square {
     background-color: #b58863;
 }
 
@@ -47,6 +47,21 @@ TODO: figure out how to place these appropriately
     margin: 2px;
     position: relative;
     z-index: -9;
+}
+
+.light-piece path {
+    fill: #cccccc;
+    fill-opacity: 1;
+    stroke: #000000;
+    stroke-width: 3;
+}
+
+.dark-piece path {
+    fill:#323232 ;
+    fill-opacity:1 ;
+    stroke:#000000 ;
+    stroke-width:3 ;
+    stroke-opacity:1 ;
 }
 
 path {
@@ -100,3 +115,4 @@ path {
 .promotion-window-content button:hover {
     background: #0056b3;
 }
+

@@ -1,33 +1,22 @@
+const parser = new DOMParser();
 const matchInfoDisplay = document.querySelector("#match-info-display");
 const gameBoard = document.querySelector("#gameboard");
 const infoDisplay = document.querySelector("#info-display");
 const playerDisplay = document.querySelector("#player");
 const turnDisplay = document.querySelector("#turn-display");
-const playerClock = document.querySelector("#player_clock");
-const opponentClock = document.querySelector("#opponent_clock");
+const playerClock = document.querySelector("#player-clock");
+const opponentClock = document.querySelector("#opponent-clock");
 const width = 8;
 
-// these can & probably should be dynamically created perspectives, maybe...?
-const startPiecesLightPerspective = [
-    dark_rook, dark_knight, dark_bishop, dark_queen, dark_king, dark_bishop, dark_knight, dark_rook,
-    dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn,
+const startPieces = [
+    rook, knight, bishop, queen, king, bishop, knight, rook,
+    pawn, pawn, pawn, pawn, pawn, pawn, pawn, pawn,
     '', '', '', '', '', '', '', '',
     '', '', '', '', '', '', '', '',
     '', '', '', '', '', '', '', '',
     '', '', '', '', '', '', '', '',
-    light_pawn, light_pawn, light_pawn, light_pawn, light_pawn, light_pawn, light_pawn, light_pawn,
-    light_rook, light_knight, light_bishop, light_queen, light_king, light_bishop, light_knight, light_rook,
-];
-
-const startPiecesDarkPerspective = [
-    light_rook, light_knight, light_bishop, light_king, light_queen, light_bishop, light_knight, light_rook,
-    light_pawn, light_pawn, light_pawn, light_pawn, light_pawn, light_pawn, light_pawn, light_pawn,
-    '', '', '', '', '', '', '', '',
-    '', '', '', '', '', '', '', '',
-    '', '', '', '', '', '', '', '',
-    '', '', '', '', '', '', '', '',
-    dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn, dark_pawn,
-    dark_rook, dark_knight, dark_bishop, dark_king, dark_queen, dark_bishop, dark_knight, dark_rook,
+    pawn, pawn, pawn, pawn, pawn, pawn, pawn, pawn,
+    rook, knight, bishop, queen, king, bishop, knight, rook,
 ];
 
 let playerTurn = 'light';
@@ -36,18 +25,30 @@ let playerPieces = null;
 let startPositionId = null;
 let draggedElement = null;
 
+function pieceTo(piece, color) {
+    if ( piece === "" ) {
+        return piece
+    }
+
+    let elem = parser.parseFromString(piece, "text/html");
+    elem.body.firstElementChild.id = color + "-" + elem.body.firstElementChild.id
+    elem.body.firstElementChild.classList.add(color+"-piece")
+
+    return elem.body.outerHTML;
+}
+
 function setBoard(piece, i) {
     const square = document.createElement('div');
     square.classList.add('square');
-    square.innerHTML = piece;
+    square.innerHTML = i > 31 ? pieceTo(piece, "light") : pieceTo(piece, "dark");
     square.firstChild?.setAttribute('draggable', true)
     square.setAttribute('square-id', i);
 
     const row = Math.floor( (63 - i) / 8 ) + 1
     if ( row % 2 === 0 ) {
-        square.classList.add(i % 2 === 0 ? "light" : "dark" );
+        square.classList.add(i % 2 === 0 ? "light-square" : "dark-square" );
     } else {
-        square.classList.add(i % 2 === 0 ? "dark" : "light" );
+        square.classList.add(i % 2 === 0 ? "dark-square" : "light-square" );
     }
 
     gameBoard.append(square);
@@ -57,12 +58,13 @@ function createBoard(perspective) {
     playerPieces = perspective;
 
     if ( perspective === "light" ) {
-        startPiecesLightPerspective.forEach((piece, i) => {
+        startPieces.forEach((piece, i) => {
             setBoard(piece, i);
         })
     } else {
         /// if any perspective other than dark gets passed in it will be Dark Perspective as well
-        startPiecesDarkPerspective.forEach((piece, i) => {
+        startPieces.reverse();
+        startPieces.forEach((piece, i) => {
             setBoard(piece, 63-i);
         })
     }
@@ -233,7 +235,7 @@ var websocketDragDrop = function(gameManager) {
         }    
         
         // generate string for alebraic notation of the move to send to server
-        let movedPiece = draggedElement.id.substring(draggedElement.id.indexOf("_") + 1);
+        let movedPiece = draggedElement.id.substring(draggedElement.id.indexOf("-") + 1);
         let pieceChar = pieceToLetter(movedPiece);
         let targetSquare = squareIdToAlgebraicNotation(targetId);
 
