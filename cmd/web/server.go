@@ -57,8 +57,9 @@ func (app *application) serve() error {
 
 func (app *application) serveTLS(certFile, keyFile string) error {
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", app.config.port),
-		Handler: app.routes(),
+		Addr:           fmt.Sprintf(":%d", app.config.port),
+		MaxHeaderBytes: (1024 * 1024) / 2, // half MB
+		Handler:        app.routes(),
 		TLSConfig: &tls.Config{
 			CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
 		},
