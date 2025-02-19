@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/michaelgov-ctrl/badchess/ui"
+	"github.com/michaelgov-ctrl/bad-chess/ui"
 )
 
 func (app *application) routes() http.Handler {

@@ -84,12 +84,12 @@ nav button:hover {
 }
 
 a {
-    color: #ffcc00;
+    color: lightblue;
     transition: color 0.3s ease-in-out;
 }
 
 a:hover {
-    color: #ffd700;
+    color: darkgoldenrod;
 }
 
 button {
@@ -103,7 +103,7 @@ button {
 }
 
 button:hover {
-    background-color: #e6b800;
+    background-color: darkgoldenrod;
 }
 
 main {

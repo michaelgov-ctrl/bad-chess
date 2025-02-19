@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/michaelgov-ctrl/badchess/ui"
+	"github.com/michaelgov-ctrl/bad-chess/ui"
 )
 
 type templateData struct {

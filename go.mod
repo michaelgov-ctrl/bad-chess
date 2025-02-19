@@ -1,4 +1,4 @@
-module github.com/michaelgov-ctrl/badchess
+module github.com/michaelgov-ctrl/bad-chess
 
 go 1.24.0
 
