@@ -6,6 +6,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 	"github.com/michaelgov-ctrl/bad-chess/ui"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func (app *application) routes() http.Handler {
@@ -30,7 +31,9 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodPost, "/user/login", dynamic.ThenFunc(app.userLoginPost))
 	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogoutPost))
 
-	standard := alice.New(app.recoverPanic, app.enableCORS, app.logRequest, secureHeaders)
+	router.Handler(http.MethodGet, "/metrics", promhttp.HandlerFor(app.metricsRegistry, promhttp.HandlerOpts{}))
+
+	standard := alice.New(app.metrics, app.recoverPanic, app.enableCORS, app.logRequest, secureHeaders)
 
 	return standard.Then(router)
 }

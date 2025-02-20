@@ -50,6 +50,8 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 
 	id, err := app.authentication.Authenticate(form.Key)
 	if err != nil {
+		// TODO: this will have to change to the forwarded for once behind a proxy
+		app.logger.Info("failed authentication attempt", "origin", r.RemoteAddr)
 		form.AddNonFieldError("key is incorrect")
 		data := app.newTemplateData(r)
 		data.Form = form

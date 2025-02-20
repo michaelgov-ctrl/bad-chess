@@ -240,8 +240,8 @@ function validKnightMove(startId, targetId, width) {
 }
 
 function validBishopMove(startId, targetId, width) {
+   // TODO: rather than check every possible combo this way, calculate squares between start and target & confirm its a diagonal with no pieces present between
    if (
-      // TODO: change to for loop
       // forward one diagonal
       startId + width + 1 === targetId ||
       (startId + (width * 2) + 2 === targetId && !document.querySelector(`[square-id="${startId + width + 1}"]`)?.firstChild) ||
@@ -285,8 +285,8 @@ function validBishopMove(startId, targetId, width) {
 }
 
 function validRookMove(startId, targetId, width) {
+   // TODO: rather than check every possible combo this way, calculate squares between start and target & confirm its a non diagonal straight line with no pieces present between
    if (
-      // TODO: change to for loop
       // move forward
       startId + width === targetId ||
       (startId + (width * 2) === targetId && !document.querySelector(`[square-id="${startId + width}"]`)?.firstChild) ||
@@ -336,6 +336,7 @@ function validKingMove(startId, targetId, width) {
       // let server handle castling validation for now
       startId + 2 === targetId ||
       startId - 2 === targetId ||
+      //
       startId + width === targetId ||
       startId - width === targetId ||
       startId + width + 1 === targetId ||

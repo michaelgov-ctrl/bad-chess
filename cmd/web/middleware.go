@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
+	"strconv"
 
 	"github.com/justinas/nosurf"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func secureHeaders(next http.Handler) http.Handler {
@@ -90,7 +93,7 @@ func noSurf(next http.Handler) http.Handler {
 	return csrfHandler
 }
 
-// check here if i have trouble getting setup with a reverse proxy
+// TODO: check here if i have trouble getting setup with a reverse proxy
 func (app *application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Origin")
@@ -116,5 +119,101 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+type metricsResponseWriter struct {
+	wrapped       http.ResponseWriter
+	statusCode    int
+	headerWritten bool
+}
+
+func newMetricsResponseWriter(w http.ResponseWriter) *metricsResponseWriter {
+	return &metricsResponseWriter{
+		wrapped:    w,
+		statusCode: http.StatusOK,
+	}
+}
+
+func (mw *metricsResponseWriter) Header() http.Header {
+	return mw.wrapped.Header()
+}
+
+func (mw *metricsResponseWriter) WriteHeader(statusCode int) {
+	mw.wrapped.WriteHeader(statusCode)
+
+	if !mw.headerWritten {
+		mw.statusCode = statusCode
+		mw.headerWritten = true
+	}
+}
+
+func (mw *metricsResponseWriter) Write(b []byte) (int, error) {
+	mw.headerWritten = true
+	return mw.wrapped.Write(b)
+}
+
+func (mw *metricsResponseWriter) Unwrap() http.ResponseWriter {
+	return mw.wrapped
+}
+
+func (app *application) metrics(next http.Handler) http.Handler {
+	var totalRequestsReceived = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "requests_received_total",
+			Help: "Total number of http requests received",
+		},
+	)
+
+	var totalResponsesSent = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "responses_sent_total",
+			Help: "Total number of http responses sent",
+		},
+	)
+
+	var totalResponsesSentByStatus = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "responses_sent_by_status_total",
+			Help: "Total http responses sent by status",
+		},
+		[]string{
+			"response_code",
+		},
+	)
+
+	var requestersNumOfRequests = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "requests_by_requester_total",
+			Help: "Total number of requests for each requester",
+		},
+		[]string{
+			"host",
+		},
+	)
+
+	app.metricsRegistry.MustRegister(totalRequestsReceived, totalResponsesSent, totalResponsesSentByStatus, requestersNumOfRequests)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		totalRequestsReceived.Inc()
+
+		mw := newMetricsResponseWriter(w)
+		next.ServeHTTP(mw, r)
+
+		totalResponsesSent.Inc()
+
+		totalResponsesSentByStatus.With(prometheus.Labels{
+			"response_code": strconv.Itoa(mw.statusCode),
+		}).Inc()
+
+		// TODO: this will have to change to the forwarded for once behind a proxy
+		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			ip = "parse error"
+		}
+
+		requestersNumOfRequests.With(prometheus.Labels{
+			"host": ip,
+		}).Inc()
 	})
 }

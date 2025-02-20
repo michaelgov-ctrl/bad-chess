@@ -64,7 +64,7 @@ func (c *Client) readEvents(logger *slog.Logger) {
 		}
 
 		var req Event
-		logger.Info("received payload", "payload", string(payload))
+		logger.Debug("received payload", "payload", string(payload))
 		if err := json.Unmarshal(payload, &req); err != nil {
 			logger.Error("error marshalling event", "error", err)
 			break
@@ -111,7 +111,7 @@ func (c *Client) writeEvents(logger *slog.Logger) {
 				return
 			}
 
-			logger.Info("message sent")
+			logger.Debug("message sent")
 		case <-ticker.C:
 			if err := c.connection.WriteMessage(websocket.PingMessage, []byte(``)); err != nil {
 				logger.Error("ping error", "error", err)

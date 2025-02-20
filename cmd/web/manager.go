@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/notnil/chess"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -23,6 +24,7 @@ var (
 		WriteBufferSize: 1024,
 	}
 
+	// TODO: update this for proxy
 	AllowedOrigins = []string{
 		"ws://localhost:8080",
 		"ws://localhost:8081",
@@ -32,8 +34,6 @@ var (
 )
 
 type Manager struct {
-	logger *slog.Logger
-
 	clients   ClientList
 	clientsMu sync.RWMutex
 
@@ -42,6 +42,9 @@ type Manager struct {
 	matchCleanupChan chan MatchOutcome
 
 	handlers map[string]EventHandler
+
+	logger  *slog.Logger
+	metrics *ManagerMetrics
 }
 
 type ManagerOptions func(*Manager)
@@ -52,22 +55,60 @@ func WithLogger(logger *slog.Logger) ManagerOptions {
 	}
 }
 
+func WithMetricsRegistry(registry *prometheus.Registry) ManagerOptions {
+	return func(m *Manager) {
+		m.metrics.registry = registry
+	}
+}
+
 func NewManager(ctx context.Context, opts ...ManagerOptions) *Manager {
 	m := &Manager{
-		logger:           slog.New(slog.NewTextHandler(os.Stdout, nil)),
 		clients:          make(ClientList),
 		matches:          make(TimeControlMatchList),
 		matchCleanupChan: make(chan MatchOutcome),
 		handlers:         make(map[string]EventHandler),
+		logger:           slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		metrics:          NewManagerMetrics(),
 	}
 
 	for _, opt := range opts {
 		opt(m)
 	}
 
+	m.metrics.totalClients = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "manager_clients_total",
+			Help: "Total number of clients the manager has handled",
+		},
+	)
+
+	m.metrics.currentClients = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "manager_clients_current",
+			Help: "Current number of connected clients",
+		},
+	)
+
+	m.metrics.totalMatches = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "manager_matches_total",
+			Help: "Total number of matches the manager has handled",
+		},
+	)
+
+	m.metrics.currentMatches = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "manager_matches_current",
+			Help: "Current number of matches",
+		},
+	)
+
+	m.metrics.registry.MustRegister(m.metrics.totalClients, m.metrics.currentClients, m.metrics.totalMatches, m.metrics.currentMatches)
+
 	m.registerSupportedTimeControls()
 	m.registerEventHandlers()
 	go m.cleanupMatches()
+	go m.UpdateMetrics()
 
 	return m
 }
@@ -85,6 +126,8 @@ func (m *Manager) registerSupportedTimeControls() {
 }
 
 func (m *Manager) addClient(c *Client) {
+	m.metrics.totalClients.Inc()
+
 	m.clientsMu.Lock()
 	defer m.clientsMu.Unlock()
 
@@ -146,7 +189,7 @@ func (m *Manager) cleanupMatches() {
 		case <-cleanupTime.C:
 			m.matchesMu.Lock()
 			for _, finishedMatch := range finishedMatches {
-				m.logger.Info("removing match from manager", "match info", finishedMatch)
+				m.logger.Debug("removing match from manager", "match info", finishedMatch)
 				if match, ok := m.matches[finishedMatch.TimeControl][finishedMatch.ID]; ok {
 					match.MessagePlayers(Event{Type: EventMatchOver}, Light, Dark)
 					match.DisconnectPlayers("", Light, Dark)
@@ -161,6 +204,7 @@ func (m *Manager) cleanupMatches() {
 	}
 }
 
+// TODO: update this for proxy
 func checkOrigin(r *http.Request) bool {
 	return true
 	/*
@@ -223,6 +267,7 @@ func (m *Manager) MatchMakingHandler(event Event, c *Client) error {
 		}
 	}
 
+	m.metrics.totalMatches.Inc()
 	c.currentMatch.ID = m.newMatch(joinEvent.TimeControl)
 	c.currentMatch.Pieces = Light
 	err := m.matchMakingAddClientToMatch(c)
@@ -294,4 +339,40 @@ func (m *Manager) newMatch(timeControl TimeControl) MatchId {
 	}
 
 	return matchId
+}
+
+type ManagerMetrics struct {
+	registry       *prometheus.Registry
+	totalClients   prometheus.Counter
+	currentClients prometheus.Gauge
+	totalMatches   prometheus.Counter
+	currentMatches prometheus.Gauge
+}
+
+func NewManagerMetrics() *ManagerMetrics {
+	return &ManagerMetrics{
+		registry: prometheus.NewRegistry(),
+	}
+}
+
+func (m *Manager) UpdateMetrics() {
+	for {
+		time.Sleep(5 * time.Second)
+		go m.UpdateCurrentClientsMetric()
+		go m.UpdateCurrentMatchesMetric()
+	}
+}
+
+func (m *Manager) UpdateCurrentClientsMetric() {
+	m.clientsMu.RLock()
+	defer m.clientsMu.RUnlock()
+
+	m.metrics.currentClients.Set(float64(len(m.clients)))
+}
+
+func (m *Manager) UpdateCurrentMatchesMetric() {
+	m.matchesMu.RLock()
+	defer m.matchesMu.RUnlock()
+
+	m.metrics.currentMatches.Set(float64(len(m.matches)))
 }

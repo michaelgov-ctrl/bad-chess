@@ -11,6 +11,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	"github.com/michaelgov-ctrl/bad-chess/internal/models"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type config struct {
@@ -22,13 +23,14 @@ type config struct {
 }
 
 type application struct {
-	config         config
-	authentication *models.LazyAuth
-	logger         *slog.Logger
-	gameManager    *Manager
-	sessionManager *scs.SessionManager
-	templateCache  map[string]*template.Template
-	formDecoder    *form.Decoder
+	config          config
+	authentication  *models.LazyAuth
+	gameManager     *Manager
+	sessionManager  *scs.SessionManager
+	templateCache   map[string]*template.Template
+	formDecoder     *form.Decoder
+	logger          *slog.Logger
+	metricsRegistry *prometheus.Registry
 }
 
 func main() {
@@ -56,14 +58,17 @@ func main() {
 	sessionManager.Lifetime = models.MaxSessionAge
 	sessionManager.Cookie.Secure = true
 
+	registry := prometheus.NewRegistry()
+
 	app := &application{
-		config:         cfg,
-		authentication: models.NewLazyAuth(),
-		logger:         logger,
-		gameManager:    NewManager(context.Background(), WithLogger(logger)),
-		sessionManager: sessionManager,
-		templateCache:  templateCache,
-		formDecoder:    form.NewDecoder(),
+		config:          cfg,
+		authentication:  models.NewLazyAuth(),
+		gameManager:     NewManager(context.Background(), WithLogger(logger), WithMetricsRegistry(registry)),
+		sessionManager:  sessionManager,
+		templateCache:   templateCache,
+		formDecoder:     form.NewDecoder(),
+		logger:          logger,
+		metricsRegistry: registry,
 	}
 
 	// if err := app.serveTLS("", ""); err != nil {
