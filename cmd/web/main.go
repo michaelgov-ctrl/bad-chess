@@ -12,6 +12,7 @@ import (
 	"github.com/go-playground/form/v4"
 	"github.com/michaelgov-ctrl/bad-chess/internal/models"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 )
 
 type config struct {
@@ -59,6 +60,10 @@ func main() {
 	sessionManager.Cookie.Secure = true
 
 	registry := prometheus.NewRegistry()
+	registry.MustRegister(
+		collectors.NewGoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+	)
 
 	app := &application{
 		config:          cfg,
