@@ -108,7 +108,7 @@ func NewManager(ctx context.Context, opts ...ManagerOptions) *Manager {
 	m.registerSupportedTimeControls()
 	m.registerEventHandlers()
 	go m.cleanupMatches()
-	go m.UpdateMetrics()
+	go m.updateMetrics()
 
 	return m
 }
@@ -361,22 +361,22 @@ func NewManagerMetrics() *ManagerMetrics {
 	}
 }
 
-func (m *Manager) UpdateMetrics() {
+func (m *Manager) updateMetrics() {
 	for {
 		time.Sleep(5 * time.Second)
-		go m.UpdateCurrentClientsMetric()
-		go m.UpdateCurrentMatchesMetric()
+		go m.updateCurrentClientsMetric()
+		go m.updateCurrentMatchesMetric()
 	}
 }
 
-func (m *Manager) UpdateCurrentClientsMetric() {
+func (m *Manager) updateCurrentClientsMetric() {
 	m.clientsMu.RLock()
 	defer m.clientsMu.RUnlock()
 
 	m.metrics.currentClients.Set(float64(len(m.clients)))
 }
 
-func (m *Manager) UpdateCurrentMatchesMetric() {
+func (m *Manager) updateCurrentMatchesMetric() {
 	m.matchesMu.RLock()
 	defer m.matchesMu.RUnlock()
 
