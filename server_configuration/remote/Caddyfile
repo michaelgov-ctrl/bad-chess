@@ -1,0 +1,4 @@
+http://167.172.147.202 {
+    respond /metrics/* "Not Permitted" 403
+    reverse_proxy localhost:8080
+}

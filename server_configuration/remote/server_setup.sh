@@ -32,13 +32,16 @@ ufw --force enable
 # get that sweet sweet fail2ban
 apt --yes install fail2ban
 
-# install caddy
+# install & configure caddy
 # https://caddyserver.com/docs/install#debian-ubuntu-raspbian
 sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
 sudo apt update
 sudo apt install caddy
+
+sudo mv -f ~/remote/Caddyfile /etc/caddy/
+sudo systemctl reload caddy
 
 # upgrade packages & replace config files if available
 apt --yes -o Dpkg::Options::="--force-confnew" upgrade
