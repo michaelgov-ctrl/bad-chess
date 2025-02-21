@@ -127,6 +127,7 @@ func (m *Manager) registerSupportedTimeControls() {
 
 func (m *Manager) addClient(c *Client) {
 	m.metrics.totalClients.Inc()
+	m.logger.Debug("new client", "client", c)
 
 	m.clientsMu.Lock()
 	defer m.clientsMu.Unlock()
@@ -135,6 +136,8 @@ func (m *Manager) addClient(c *Client) {
 }
 
 func (m *Manager) removeClient(c *Client) {
+	m.logger.Debug("removed client", "client", c)
+
 	m.clientsMu.Lock()
 	defer m.clientsMu.Unlock()
 
@@ -192,6 +195,8 @@ func (m *Manager) cleanupMatches() {
 				m.logger.Debug("removing match from manager", "match info", finishedMatch)
 				if match, ok := m.matches[finishedMatch.TimeControl][finishedMatch.ID]; ok {
 					match.MessagePlayers(Event{Type: EventMatchOver}, Light, Dark)
+					//m.removeClient(match.LightPlayer.Client)
+					//m.removeClient(match.DarkPlayer.Client)
 					match.DisconnectPlayers("", Light, Dark)
 				}
 
@@ -331,6 +336,7 @@ func (m *Manager) newMatch(timeControl TimeControl) MatchId {
 			Game:        chess.NewGame(),
 			Turn:        Light,
 			State:       Waiting,
+			Logger:      m.logger,
 		}
 
 		go match.notifyIfStale(m.matchCleanupChan)
@@ -374,5 +380,10 @@ func (m *Manager) UpdateCurrentMatchesMetric() {
 	m.matchesMu.RLock()
 	defer m.matchesMu.RUnlock()
 
-	m.metrics.currentMatches.Set(float64(len(m.matches)))
+	var sum int
+	for _, matchList := range m.matches {
+		sum += len(matchList)
+	}
+
+	m.metrics.currentMatches.Set(float64(sum))
 }

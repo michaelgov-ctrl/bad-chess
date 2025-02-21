@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/notnil/chess"
 )
 
@@ -59,17 +61,14 @@ const (
 // TODO: Spectators  []*Client
 // TODO: evaluate passing the application logger to each match for logging
 type Match struct {
-	ID MatchId
-
+	ID          MatchId
 	TimeControl TimeControl
-
 	LightPlayer *Player
 	DarkPlayer  *Player
-
-	Game *chess.Game
-	Turn PieceColor
-
-	State MatchState
+	Game        *chess.Game
+	Turn        PieceColor
+	State       MatchState
+	Logger      *slog.Logger
 }
 
 func (tc TimeControl) MarshalJSON() ([]byte, error) {
@@ -385,23 +384,25 @@ func (m *Match) MessagePlayers(event Event, players ...PieceColor) {
 }
 
 func (m *Match) DisconnectPlayers(msg string, players ...PieceColor) {
+	msgType := websocket.CloseMessage
+	data := websocket.FormatCloseMessage(websocket.CloseNormalClosure, msg)
+	deadline := time.Now().Add(time.Second)
+
 	for _, color := range players {
 		switch color {
 		case Light:
 			if m.LightPlayer != nil && m.LightPlayer.Client != nil {
-				if err := m.LightPlayer.Client.CloseConn(msg); err != nil {
+				if err := m.LightPlayer.Client.connection.WriteControl(msgType, data, deadline); err != nil {
 					// TODO: fix this when i setup passing structured logger to match
 					// logger.Error("connection closed", "error", err)
 				}
-				m.LightPlayer.Client.manager.removeClient(m.LightPlayer.Client)
 			}
 		case Dark:
 			if m.DarkPlayer != nil && m.DarkPlayer.Client != nil {
-				if err := m.DarkPlayer.Client.CloseConn(msg); err != nil {
+				if err := m.DarkPlayer.Client.connection.WriteControl(msgType, data, deadline); err != nil {
 					// TODO: fix this when i setup passing structured logger to match
 					// logger.Error("connection closed", "error", err)
 				}
-				m.DarkPlayer.Client.manager.removeClient(m.DarkPlayer.Client)
 			}
 		}
 	}
