@@ -1,12 +1,12 @@
 name: goreleaser
 
 on:
+  tags:        
+    - '*' 
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  tags:
-      - "*"
 
 permissions:
   contents: write
