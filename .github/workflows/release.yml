@@ -2,26 +2,17 @@ name: goreleaser
 
 on:
   push:
-    branches: [ "main" ]
     tags:
     - 'v[0-9]+.[0-9]+.[0-9]+'
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 permissions:
   contents: write
   # packages: write
   # issues: write
   # id-token: write
-
-builds:
-  - main: ./cmd/web/
-    binary: bad-chess-server
-    ldflags: -s -w
-    goos: linux
-    goarch: amd64
 
 jobs:
   goreleaser:
