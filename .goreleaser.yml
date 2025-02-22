@@ -1,4 +1,5 @@
 project_name: bad-chess
+version: 2
 
 builds:
   - main: ./cmd/web/
