@@ -5,5 +5,7 @@ builds:
   - main: ./cmd/web/
     binary: bad-chess-server
     ldflags: -s -w
-    goos: linux
-    goarch: amd64
+    goos:
+      - linux
+    goarch:
+      - amd64
