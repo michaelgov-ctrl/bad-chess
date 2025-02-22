@@ -53,3 +53,4 @@ sudo systemctl enable bad-chess
 sudo systemctl restart bad-chess
 
 reboot
+# oh hi mark
