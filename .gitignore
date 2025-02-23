@@ -1,3 +1,6 @@
+*.crt
+*.key
 *.exe
 bad-chess-server
 server_configuration\build\*
+notes*

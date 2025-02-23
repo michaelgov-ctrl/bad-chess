@@ -45,6 +45,10 @@ func main() {
 		return nil
 	})
 
+	var cert, key string
+	flag.StringVar(&cert, "cert", "server.crt", "File containing cert for tls")
+	flag.StringVar(&key, "key", "server.key", "File containing key for tls")
+
 	flag.Parse()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel(cfg.logLevel)}))
@@ -76,7 +80,7 @@ func main() {
 		metricsRegistry: registry,
 	}
 
-	// if err := app.serveTLS("", ""); err != nil {
+	//if err := app.serveTLS(cert, key); err != nil {
 	if err := app.serve(); err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)

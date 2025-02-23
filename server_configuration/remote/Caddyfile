@@ -1,8 +1,0 @@
-{
-    email badchessmgmt@gmail.com
-}
-
-http://bad-chess.com {
-    respond /metrics/* "Not Permitted" 403
-    reverse_proxy localhost:8080
-}

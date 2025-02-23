@@ -1,0 +1,65 @@
+---
+- name: Build
+  hosts: localhost
+  vars:
+    do_token: "{{ lookup('ansible.builtin.env', 'DIGITALOCEAN_ANSIBLE_TOKEN') }}"
+    home_env_var: "{{ lookup('ansible.builtin.env', 'HOME') }}"
+    ssh_pub_key: "{{ lookup('file', '{{ home_env_var }}/.ssh/id_rsa_bad-chess.pub') }}"
+
+  tasks:
+    - name: Create SSH key
+      community.digitalocean.digital_ocean_sshkey:
+        api_token: "{{ do_token }}"
+        name: ansible
+        ssh_pub_key: "{{ ssh_pub_key }}"
+        state: present
+      register: ssh_key_result
+
+    - name: Show ssh key info
+      ansible.builtin.debug:
+        msg: |
+          Key ID is {{ ssh_key_result.data.ssh_key.id }}
+
+    - name: Create a droplet
+      community.digitalocean.digital_ocean_droplet:
+        state: active
+        api_token: "{{ do_token }}"
+        id: 695318008
+        name: bad-chess-debian
+        unique_name: true
+        size: s-1vcpu-1gb
+        region: nyc2
+        image: debian-12-x64
+        ssh_keys:
+          - "{{ ssh_key_result.data.ssh_key.id }}"
+        monitoring: true
+      register: droplet_result
+
+    - name: Show Droplet info
+      ansible.builtin.debug:
+        msg: |
+          Droplet ID is {{ droplet_result.data.droplet.id }}
+          First Public IPv4 is {{ (droplet_result.data.droplet.networks.v4 | selectattr('type', 'equalto', 'public')).0.ip_address | default('<none>', true) }}
+          First Private IPv4 is {{ (droplet_result.data.droplet.networks.v4 | selectattr('type', 'equalto', 'private')).0.ip_address | default('<none>', true) }}
+
+    - name: Add Droplet as target host
+      add_host:
+        hostname: "{{ (droplet_result.data.droplet.networks.v4 | selectattr('type', 'equalto', 'public')).0.ip_address | default('<none>', true) }}"
+        group: webservers
+        ansible_host: "{{ (droplet_result.data.droplet.networks.v4 | selectattr('type', 'equalto', 'public')).0.ip_address | default('<none>', true) }}"
+        ansible_port: 22
+
+- name: Deploy
+  hosts: all:webservers
+  vars:
+    ansible_user: root
+    webserver_port: 8080
+  tasks:
+    - name: Show current target hosts for this play
+      debug:
+        msg: "Current host is {{ inventory_hostname }} and group 'webservers' contains: {{ groups['webservers'] }}"
+
+    - name: Copy unit file
+      template:
+        src: bad-chess.service.j2
+        dest: /etc/systemd/system/bad-chess.service

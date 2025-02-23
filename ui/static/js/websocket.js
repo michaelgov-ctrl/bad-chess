@@ -139,11 +139,27 @@ class GameManager {
     interuptMessage = null;
 
     connect() {
-        // TODO: check here for upgrading ws to wss
-        this.socket = new WebSocket('ws://localhost:8080/matches/ws');
+        //yeet
+        this.socket = new WebSocket('wss://bad-chess.com/matches/ws');
 
         this.socket.addEventListener('open', () => {
             console.log('ws conn opened');
+
+            // for now terrible wait for connection while i figure out how to otherwise return once connected
+            // really this should probably maybe be handled in the initial setup of the serveWS() of the
+            // websocket manager. TODO: look into that.
+            const queryString = window.location.search;
+            const urlParams = new URLSearchParams(queryString);
+            const timecontrol = urlParams.get('timecontrol');
+
+            setTimeout(function(){
+                const evtMsg = new EventMessage("join_match", `{"time_control":"${timecontrol}"}`);
+                gameManager.send(evtMsg);
+                gameManager.interrupt()
+                    .catch((error) => {
+                        temporaryMessage(JSON.stringify(error));
+                    });
+            }, 1000);
         });
 
         this.socket.addEventListener('message', (evt) => {
