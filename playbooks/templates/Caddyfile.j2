@@ -2,9 +2,10 @@
         email badchessmgmt@gmail.com
 }
 
-http://bad-chess.com {
+bad-chess.com {
         respond /metrics/* "Not Permitted" 403
         reverse_proxy localhost:{{ webserver_port }}  {
+                stream_timeout 24h
                 stream_close_delay 5m
         }
 }

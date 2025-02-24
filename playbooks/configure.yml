@@ -1,0 +1,159 @@
+---
+- name: Configure Droplet
+  hosts: webservers
+  gather_facts: no
+  vars:
+    ansible_user: root
+    timezone: America/New_York
+    locale: en_US.UTF-8
+    username: bad-chess
+    ssh_port: 65332
+  tasks:
+    - name: Show current target hosts for this play
+      debug:
+        msg: "Current host is {{ inventory_hostname }} and group 'webservers' contains: {{ groups['webservers'] }}"
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Set system timezone
+      community.general.timezone:
+        name: "{{ timezone }}"
+
+    - name: Uncomment en_US.UTF-8 in /etc/locale.gen
+      lineinfile:
+        path: /etc/locale.gen
+        regexp: '^#(en_US\.UTF-8 UTF-8)'
+        line: 'en_US.UTF-8 UTF-8'
+        state: present
+
+    - name: Generate locales
+      command: locale-gen
+
+    - name: Create service user with a home directory, bash shell, and add to sudo group
+      user:
+        name: "{{ username }}"
+        shell: /bin/bash
+        groups: sudo
+        create_home: yes
+
+    - name: Remove password for the user
+      command: passwd --delete {{ username }}
+
+    - name: Force password change on next login
+      command: chage --lastday 0 {{ username }}
+
+    - name: Copy root .ssh directory to the user's home if not already present
+      ansible.builtin.copy:
+        src: /root/.ssh
+        dest: "/home/{{ username }}"
+        remote_src: yes
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: Ensure fail2ban is installed
+      apt:
+        name: fail2ban
+        state: present
+
+    - name: Copy jail.conf to jail.local for persistence
+      ansible.builtin.copy:
+        src: /etc/fail2ban/jail.conf
+        dest: /etc/fail2ban/jail.local
+        remote_src: yes
+
+    - name: Uncomment fail2ban ignoreip for localhost
+      lineinfile:
+        path: /etc/fail2ban/jail.local
+        regexp: '^#(ignoreip = 127.0.0.1/8 ::1)'
+        line: "ignoreip = 127.0.0.1/8 ::1"
+        state: present
+
+    - name: Copy paths-debian.conf to paths-debian.local for persistence
+      ansible.builtin.copy:
+        src: /etc/fail2ban/paths-debian.conf
+        dest: /etc/fail2ban/paths-debian.local
+        remote_src: yes
+
+    - name: Ensure fail2ban recognizes systemd for sshd
+      lineinfile:
+        path: /etc/fail2ban/paths-debian.local
+        line: "sshd_backend = systemd"
+        state: present
+
+    - name: Ensure UFW is installed
+      apt:
+        name: ufw
+        state: present
+
+    - name: Set default incoming policy to deny
+      community.general.ufw:
+        direction: incoming
+        default: deny
+
+    - name: Set default outgoing policy to allow
+      community.general.ufw:
+        direction: outgoing
+        default: allow
+
+    - name: Allow SSH (port {{ ssh_port }})
+      community.general.ufw:
+        rule: allow
+        port: "{{ ssh_port }}"
+
+    - name: Ensure SSH port is changed to {{ ssh_port }}
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?Port\s+'
+        line: "Port {{ ssh_port }}"
+        state: present
+
+    - name: Ensure SSH allowed users is only {{ username }}
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        line: "AllowUsers {{ username }}"
+        state: present
+
+    - name: Disable root login in sshd_config
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: "PermitRootLogin no"
+
+    - name: Disable password authentication in sshd_config
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication'
+        line: "PasswordAuthentication no"
+
+    - name: Ensure fail2ban SSH port is updated (port {{ ssh_port }})
+      ansible.builtin.replace:
+        path: /etc/fail2ban/jail.local
+        regexp: '^port\s+= ssh$'
+        replace: "port = {{ ssh_port }}"
+
+    - name: Allow HTTP (port 80/tcp)
+      community.general.ufw:
+        rule: allow
+        port: 80
+        proto: tcp
+
+    - name: Allow HTTPS (port 443/tcp)
+      community.general.ufw:
+        rule: allow
+        port: 443
+        proto: tcp
+
+    - name: Enable UFW firewall
+      community.general.ufw:
+        state: enabled
+
+    - name: Upgrade packages while forcing new configuration files
+      ansible.builtin.apt:
+        upgrade: yes
+        dpkg_options: "force-confnew"
+
+    - name: Unconditionally reboot the machine with all defaults - don't wait port has changed
+      ansible.builtin.reboot:
+        reboot_timeout: 0

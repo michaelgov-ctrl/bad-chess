@@ -1,0 +1,13 @@
+---
+- name: Deploy bad-chess
+  hosts: webservers
+  gather_facts: no
+  vars:
+    ansible_user: bad-chess
+    ansible_port: 65332
+    webserver_port: 8080
+  tasks:
+    - name: Copy template unit file
+      template:
+        src: bad-chess.service.j2
+        dest: /etc/systemd/system/bad-chess.service

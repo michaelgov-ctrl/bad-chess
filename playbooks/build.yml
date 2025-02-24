@@ -1,0 +1,49 @@
+---
+- name: Build Droplet
+  hosts: localhost
+  vars:
+    do_token: "{{ lookup('ansible.builtin.env', 'DIGITALOCEAN_ANSIBLE_TOKEN') }}"
+    home_env_var: "{{ lookup('ansible.builtin.env', 'HOME') }}"
+    ssh_pub_key: "{{ lookup('file', '{{ home_env_var }}/.ssh/id_rsa_bad-chess.pub') }}"
+
+  tasks:
+    - name: Create SSH key
+      community.digitalocean.digital_ocean_sshkey:
+        api_token: "{{ do_token }}"
+        name: ansible
+        ssh_pub_key: "{{ ssh_pub_key }}"
+        state: present
+      register: ssh_key_result
+
+    - name: Show ssh key info
+      ansible.builtin.debug:
+        msg: |
+          Key ID is {{ ssh_key_result.data.ssh_key.id }}
+
+    - name: Create a droplet
+      community.digitalocean.digital_ocean_droplet:
+        state: active
+        api_token: "{{ do_token }}"
+        id: 695318008
+        name: bad-chess-debian
+        unique_name: true
+        size: s-1vcpu-1gb
+        region: nyc2
+        image: debian-12-x64
+        ssh_keys:
+          - "{{ ssh_key_result.data.ssh_key.id }}"
+        monitoring: true
+      register: droplet_result
+
+    - name: Copy template inventory file
+      template:
+        src: inventory.j2
+        dest: ./inventory/inventory
+      delegate_to: localhost
+
+    - name: Show Droplet info
+      ansible.builtin.debug:
+        msg: |
+          Droplet ID is {{ droplet_result.data.droplet.id }}
+          First Public IPv4 is {{ (droplet_result.data.droplet.networks.v4 | selectattr('type', 'equalto', 'public')).0.ip_address | default('<none>', true) }}
+          First Private IPv4 is {{ (droplet_result.data.droplet.networks.v4 | selectattr('type', 'equalto', 'private')).0.ip_address | default('<none>', true) }}
