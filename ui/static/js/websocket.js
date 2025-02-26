@@ -139,7 +139,7 @@ class GameManager {
     interuptMessage = null;
 
     connect() {
-        //yeet
+        //this has to be changed to wss once i figure out https
         this.socket = new WebSocket('wss://bad-chess.com/matches/ws');
 
         this.socket.addEventListener('open', () => {
