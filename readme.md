@@ -1,7 +1,7 @@
 Why?
 
-I wanted a learning project with JS & Websockets that could be extensible as other learning opportunities arise.
-I already have some ideas for kernel projects for the server.
+I wanted a learning project with JS, Websockets, and hosting a server that could be extensible as other learning opportunities arise.
+I already have some ideas for kernel projects & firewalls for the server.
 and, most importantly, resume fodder.
 
 deployment from scratch:
