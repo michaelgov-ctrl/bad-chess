@@ -156,4 +156,4 @@
 
     - name: Unconditionally reboot the machine with all defaults - don't wait port has changed
       ansible.builtin.reboot:
-        reboot_timeout: 0
+        reboot_timeout: 5

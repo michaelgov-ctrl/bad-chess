@@ -2,12 +2,83 @@
 - name: Deploy bad-chess
   hosts: webservers
   gather_facts: no
+  become: yes
   vars:
     ansible_user: bad-chess
     ansible_port: 65332
+    webserver_binary: /home/bad-chess/bad-chess-server
     webserver_port: 8080
   tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - debian-keyring
+          - debian-archive-keyring
+          - apt-transport-https
+          - curl
+          - libnss3-tools
+        state: present
+        update_cache: yes
+
+    - name: Add the Caddy GPG key
+      ansible.builtin.apt_key:
+        url: https://dl.cloudsmith.io/public/caddy/stable/gpg.key
+        keyring: /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+        state: present
+
+    - name: Add the Caddy repository
+      ansible.builtin.apt_repository:
+        filename: caddy-stable.list
+        repo: "deb [signed-by=/usr/share/keyrings/caddy-stable-archive-keyring.gpg] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main"
+        state: present
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Caddy
+      apt:
+        name: caddy
+        state: present
+
+    - name: Copy template Caddyfile
+      template:
+        src: Caddyfile.j2
+        dest: /etc/caddy/Caddyfile
+
+    - name: Apply Caddyfile
+      ansible.builtin.systemd_service:
+        name: caddy
+        state: reloaded
+
+    - name: Get the latest bad-chess release details
+      uri:
+        url: https://api.github.com/repos/michaelgov-ctrl/bad-chess/releases/latest
+        method: GET
+        body_format: json
+      register: bad_chess_release
+
+    - name: Set the release variable
+      set_fact:
+        bad_chess_latest: "{{ bad_chess_release.json | to_json | from_json | community.general.json_query('assets[?ends_with(name, `linux_amd64.tar.gz`)] | [0]') }}"
+
+    - name: Download the latest release
+      get_url:
+        url: "{{ bad_chess_latest.browser_download_url }}"
+        dest: /tmp/
+
+    - name: Extract {{ bad_chess_latest.name }} into /home/bad-chess
+      ansible.builtin.unarchive:
+        src: "/tmp/{{ bad_chess_latest.name }}"
+        dest: /home/bad-chess/
+        remote_src: yes
+
     - name: Copy template unit file
       template:
         src: bad-chess.service.j2
         dest: /etc/systemd/system/bad-chess.service
+
+    - name: Start bad-chess service
+      ansible.builtin.systemd_service:
+        name: bad-chess
+        state: started
