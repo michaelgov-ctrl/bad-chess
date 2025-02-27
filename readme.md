@@ -1,5 +1,13 @@
 ![image](https://github.com/user-attachments/assets/9ab443b2-a35b-4e60-b5e9-f6ffda6527ce)
 
+Authentication is needed under a not-so-secret-key to protect the websocket used for matches from being abused(for now).
+The key is WelcomeToBadChess
+![image](https://github.com/user-attachments/assets/ff7f0197-8e42-4530-bc65-1337c8f8c305)
+
+
+![image](https://github.com/user-attachments/assets/f72eabd9-30fb-439c-a907-fc16cac08fd9)
+
+
 
 Why?
 
