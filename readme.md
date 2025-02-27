@@ -12,10 +12,21 @@ deployment from scratch:
     
     ansible-playbook -i ./playbooks/inventory/inventory ./playbooks/configure.yml
     
-    ansible-playbook -i ./playbooks/inventory/inventory ./playbooks/deploy.yml -kK
+    ansible-playbook -i ./playbooks/inventory/inventory ./playbooks/deploy.yml -K
+
+    ansible-playbook -i ./playbooks/inventory/inventory ./playbooks/observability.yml -K
 
 new release:
     
     git tag v?.?.?
     
     git push origin v?.?.?
+
+check out Grafana on localhost:
+
+    // ssh tunnel remote host port 3000(Grafana) to localhost port 9999
+    ssh -L :9999:<ip>:3000 bad-chess@<ip> -p 65332
+
+    browse to localhost:9999
+
+    

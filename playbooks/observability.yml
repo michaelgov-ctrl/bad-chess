@@ -1,7 +1,11 @@
 ---
 - name: Install Grafana, Prometheus, Loki
   hosts: all
-  become: true
+  gather_facts: no
+  become: yes
+  vars:
+    ansible_user: bad-chess
+    ansible_port: 65332
   tasks:
     - name: Add the Grafana GPG key
       ansible.builtin.apt_key:
