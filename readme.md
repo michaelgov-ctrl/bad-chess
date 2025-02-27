@@ -1,3 +1,6 @@
+![image](https://github.com/user-attachments/assets/9ab443b2-a35b-4e60-b5e9-f6ffda6527ce)
+
+
 Why?
 
 I wanted a learning project with JS, Websockets, and hosting a server that could be extensible as other learning opportunities arise.
