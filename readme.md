@@ -1,5 +1,8 @@
 # Welcome to bad-chess
 
+At the moment only matchmaking is available, so the likelihood of finding an opponent is low....
+Games against an engine is the next goal.
+
 Authentication is needed under a not-so-secret-key to protect the websocket used for matches from being abused(for now).
 The key is WelcomeToBadChess
 
