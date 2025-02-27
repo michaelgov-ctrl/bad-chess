@@ -30,13 +30,13 @@ and, most importantly, resume fodder.
       -port int
             API server port (default 8080)
       -loki-port int
-            Port of local Loki instance (default 0)
+            Port of local Loki instance to log to (optional)
       -log-level string
             Logging level (trace|debug|info|warning|error) (default "error")
       -cert string
-            File containing certificate for TLS
+            File containing certificate for TLS (optional)
       -key string
-            File containing key for TLS
+            File containing key for TLS (optional)
       -cors-trusted-origins string
             Trusted CORS origins (space-separated)
 
