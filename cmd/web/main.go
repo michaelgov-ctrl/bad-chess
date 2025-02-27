@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"html/template"
 	"log/slog"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	"github.com/michaelgov-ctrl/bad-chess/internal/models"
+	"github.com/michaelgov-ctrl/bad-chess/internal/slogloki"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 )
@@ -36,7 +38,6 @@ type application struct {
 
 func main() {
 	var cfg config
-
 	flag.IntVar(&cfg.port, "port", 8080, "API server port")
 	flag.StringVar(&cfg.logLevel, "log-level", "error", "Logging level (trace|debug|info|warning|error)")
 
@@ -46,12 +47,18 @@ func main() {
 	})
 
 	var cert, key string
-	flag.StringVar(&cert, "cert", "server.crt", "File containing cert for tls")
-	flag.StringVar(&key, "key", "server.key", "File containing key for tls")
+	flag.StringVar(&cert, "cert", "", "File containing cert for tls")
+	flag.StringVar(&key, "key", "", "File containing key for tls")
+
+	var lokiPort int
+	flag.IntVar(&lokiPort, "loki-port", 0, "Port of local loki instace")
 
 	flag.Parse()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel(cfg.logLevel)}))
+	if lokiPort != 0 {
+		logger = slogloki.NewLokiLogger(fmt.Sprintf("http://localhost:%d/loki/api/v1/push", lokiPort), logLevel(cfg.logLevel))
+	}
 
 	templateCache, err := newTemplateCache()
 	if err != nil {
@@ -80,8 +87,7 @@ func main() {
 		metricsRegistry: registry,
 	}
 
-	//if err := app.serveTLS(cert, key); err != nil {
-	if err := app.serve(); err != nil {
+	if err := app.serve(cert, key); err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}

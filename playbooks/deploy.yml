@@ -82,3 +82,9 @@
       ansible.builtin.systemd_service:
         name: bad-chess
         state: started
+
+    - name: Verify bad-chess is running
+      command: "systemctl status bad-chess"
+      register: bad_chess_status
+      changed_when: false
+      failed_when: bad_chess_status.rc != 0

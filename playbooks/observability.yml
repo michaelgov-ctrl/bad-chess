@@ -1,0 +1,66 @@
+---
+- name: Install Grafana, Prometheus, Loki
+  hosts: all
+  become: true
+  tasks:
+    - name: Add the Grafana GPG key
+      ansible.builtin.apt_key:
+        url: https://apt.grafana.com/gpg.key
+        keyring: /etc/apt/keyrings/grafana.gpg
+        state: present
+
+    - name: Add the Grafana repository
+      ansible.builtin.apt_repository:
+        filename: grafana.list
+        repo: "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main"
+        state: present
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Grafana
+      apt:
+        name: grafana
+        state: present
+
+    - name: Install Prometheus
+      apt:
+        name: prometheus
+        state: present
+
+    - name: Install Loki
+      apt:
+        name: loki
+        state: present
+
+    - name: Enable and start Grafana service
+      systemd:
+        name: grafana-server
+        enabled: yes
+        state: started
+
+    - name: Enable and start Prometheus service
+      systemd:
+        name: prometheus
+        enabled: yes
+        state: started
+
+    - name: Verify Grafana is running
+      command: systemctl status grafana-server
+      register: grafana_status
+      changed_when: false
+      failed_when: grafana_status.rc != 0
+
+    - name: Verify Prometheus is running
+      command: systemctl status prometheus
+      register: prometheus_status
+      changed_when: false
+      failed_when: prometheus_status.rc != 0
+
+    - name: Verify Loki is running
+      command: systemctl status loki
+      register: loki_status
+      changed_when: false
+      failed_when: loki_status.rc != 0
+  

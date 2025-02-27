@@ -13,14 +13,19 @@ import (
 	"time"
 )
 
-func (app *application) serve() error {
+func (app *application) serve(certFile, keyFile string) error {
 	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", app.config.port),
-		Handler:      app.routes(),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		ErrorLog:     slog.NewLogLogger(app.logger.Handler(), logLevel(app.config.logLevel)),
+		Addr:           fmt.Sprintf(":%d", app.config.port),
+		MaxHeaderBytes: (1024 * 1024) / 2, // half MB
+		Handler:        app.routes(),
+		IdleTimeout:    time.Minute,
+		ReadTimeout:    5 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		ErrorLog:       slog.NewLogLogger(app.logger.Handler(), logLevel(app.config.logLevel)),
+	}
+
+	if certFile != "" && keyFile != "" {
+		srv.TLSConfig = &tls.Config{CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256}}
 	}
 
 	shutdownError := make(chan error)
@@ -40,7 +45,7 @@ func (app *application) serve() error {
 
 	app.logger.Info("starting server", "addr", srv.Addr)
 
-	err := srv.ListenAndServe()
+	err := upgrade(srv, certFile, keyFile)
 	if !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
@@ -55,50 +60,12 @@ func (app *application) serve() error {
 	return nil
 }
 
-func (app *application) serveTLS(certFile, keyFile string) error {
-	srv := &http.Server{
-		Addr:           fmt.Sprintf(":%d", app.config.port),
-		MaxHeaderBytes: (1024 * 1024) / 2, // half MB
-		Handler:        app.routes(),
-		TLSConfig: &tls.Config{
-			CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
-		},
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		ErrorLog:     slog.NewLogLogger(app.logger.Handler(), logLevel(app.config.logLevel)),
+func upgrade(srv *http.Server, certFile, keyFile string) error {
+	if certFile != "" && keyFile != "" {
+		return srv.ListenAndServeTLS(certFile, keyFile)
 	}
 
-	shutdownError := make(chan error)
-
-	go func() {
-		quit := make(chan os.Signal, 1)
-		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-		s := <-quit
-
-		app.logger.Info("shutting down server", "signal", s.String())
-
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-
-		shutdownError <- srv.Shutdown(ctx)
-	}()
-
-	app.logger.Info("starting server", "addr", srv.Addr)
-
-	err := srv.ListenAndServeTLS(certFile, keyFile)
-	if !errors.Is(err, http.ErrServerClosed) {
-		return err
-	}
-
-	err = <-shutdownError
-	if err != nil {
-		return err
-	}
-
-	app.logger.Info("stopped server", "addr", srv.Addr)
-
-	return nil
+	return srv.ListenAndServe()
 }
 
 func logLevel(s string) slog.Level {
