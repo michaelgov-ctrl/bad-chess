@@ -124,17 +124,3 @@ func (c *Client) writeEvents(logger *slog.Logger) {
 func (c *Client) pongHandler(pongMsg string) error {
 	return c.connection.SetReadDeadline(time.Now().Add(pongWait))
 }
-
-func (c *Client) CloseConn(msg string) error {
-	if c.connection == nil {
-		return fmt.Errorf("connection for client is nil")
-	}
-
-	_ = c.connection.WriteControl(
-		websocket.CloseMessage,
-		websocket.FormatCloseMessage(websocket.CloseNormalClosure, msg),
-		time.Now().Add(time.Second),
-	)
-
-	return c.connection.Close()
-}

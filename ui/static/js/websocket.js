@@ -141,6 +141,7 @@ class GameManager {
     connect() {
         //this has to be changed to wss once i figure out https
         this.socket = new WebSocket('wss://bad-chess.com/matches/ws');
+        //this.socket = new WebSocket('ws://localhost:8080/matches/ws');
 
         this.socket.addEventListener('open', () => {
             console.log('ws conn opened');

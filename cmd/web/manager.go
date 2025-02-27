@@ -142,7 +142,9 @@ func (m *Manager) removeClient(c *Client) {
 	defer m.clientsMu.Unlock()
 
 	if _, ok := m.clients[c]; ok {
-		c.connection.Close()
+		if c != nil {
+			c.connection.Close()
+		}
 		delete(m.clients, c)
 	}
 }
@@ -195,9 +197,14 @@ func (m *Manager) cleanupMatches() {
 				m.logger.Debug("removing match from manager", "match info", finishedMatch)
 				if match, ok := m.matches[finishedMatch.TimeControl][finishedMatch.ID]; ok {
 					match.MessagePlayers(Event{Type: EventMatchOver}, Light, Dark)
-					//m.removeClient(match.LightPlayer.Client)
-					//m.removeClient(match.DarkPlayer.Client)
-					match.DisconnectPlayers("", Light, Dark)
+
+					if match.LightPlayer != nil {
+						m.removeClient(match.LightPlayer.Client)
+					}
+
+					if match.DarkPlayer != nil {
+						m.removeClient(match.DarkPlayer.Client)
+					}
 				}
 
 				delete(m.matches[finishedMatch.TimeControl], finishedMatch.ID)

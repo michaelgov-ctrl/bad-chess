@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/notnil/chess"
 )
 
@@ -378,31 +377,6 @@ func (m *Match) MessagePlayers(event Event, players ...PieceColor) {
 		case Dark:
 			if m.DarkPlayer != nil && m.DarkPlayer.Client != nil {
 				m.DarkPlayer.Client.egress <- event
-			}
-		}
-	}
-}
-
-func (m *Match) DisconnectPlayers(msg string, players ...PieceColor) {
-	msgType := websocket.CloseMessage
-	data := websocket.FormatCloseMessage(websocket.CloseNormalClosure, msg)
-	deadline := time.Now().Add(time.Second)
-
-	for _, color := range players {
-		switch color {
-		case Light:
-			if m.LightPlayer != nil && m.LightPlayer.Client != nil {
-				if err := m.LightPlayer.Client.connection.WriteControl(msgType, data, deadline); err != nil {
-					// TODO: fix this when i setup passing structured logger to match
-					// logger.Error("connection closed", "error", err)
-				}
-			}
-		case Dark:
-			if m.DarkPlayer != nil && m.DarkPlayer.Client != nil {
-				if err := m.DarkPlayer.Client.connection.WriteControl(msgType, data, deadline); err != nil {
-					// TODO: fix this when i setup passing structured logger to match
-					// logger.Error("connection closed", "error", err)
-				}
 			}
 		}
 	}
