@@ -17,9 +17,7 @@ The key is WelcomeToBadChess
 
 ## Why?
 
-I wanted a learning project with JS, Websockets, and hosting a server that could be extensible as other learning opportunities arise.
-I already have some ideas for kernel projects & firewalls for the server.
-and, most importantly, resume fodder.
+I set out to build a chess-based website as a learning project to focus on JavaScript, WebSockets, and was extensible. I wanted to work with 'real-time' communication and WebSockets provided a new(to me) opportunity to explore that. With the core infrastructure in place, I have ideas for additional projects related to security, such as implementing custom firewall rules and experimenting with kernel-level optimizations. This project gives me a platform to explore those ideas in a practical setting.
 
 ## binary help
 
