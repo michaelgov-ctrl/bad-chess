@@ -6,6 +6,7 @@
   vars:
     ansible_user: bad-chess
     ansible_port: 65332
+    webserver_port: 8080
   tasks:
     - name: Add the Grafana GPG key
       ansible.builtin.apt_key:
@@ -38,17 +39,27 @@
         name: loki
         state: present
 
+    - name: Copy template datasources.yml for Grafana
+      template:
+        src: datasources.yml.j2
+        dest: /etc/grafana/provisioning/datasources/datasources.yml
+
     - name: Enable and start Grafana service
       systemd:
         name: grafana-server
         enabled: yes
-        state: started
+        state: restarted
 
+    - name: Copy template prometheus.yml for Prometheus
+      template:
+        src: prometheus.yml.j2
+        dest: /etc/prometheus/prometheus.yml
+      
     - name: Enable and start Prometheus service
       systemd:
         name: prometheus
         enabled: yes
-        state: started
+        state: restarted
 
     - name: Verify Grafana is running
       command: systemctl status grafana-server
