@@ -7,6 +7,7 @@
     ansible_user: bad-chess
     ansible_port: 65332
     webserver_port: 8080
+    grafana_dashboard_provisioning_directory: /var/lib/grafana/dashboards
   tasks:
     - name: Add the Grafana GPG key
       ansible.builtin.apt_key:
@@ -44,11 +45,33 @@
         src: datasources.yml.j2
         dest: /etc/grafana/provisioning/datasources/datasources.yml
 
+    - name: Copy template dashboards.yml for Grafana
+      template:
+        src: dashboards.yml.j2
+        dest: /etc/grafana/provisioning/dashboards/dashboards.yml
+
+    - name: Create dashboard directory if it does not exist
+      ansible.builtin.file:
+        path: "{{ grafana_dashboard_provisioning_directory }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy bad-chess json dashboard
+      ansible.builtin.copy:
+        src: ./files/grafana-bad-chess.json
+        dest: "{{ grafana_dashboard_provisioning_directory }}/grafana-bad-chess.json"
+
     - name: Enable and start Grafana service
       systemd:
         name: grafana-server
         enabled: yes
         state: restarted
+
+    - name: Verify Grafana is running
+      command: systemctl status grafana-server
+      register: grafana_status
+      changed_when: false
+      failed_when: grafana_status.rc != 0
 
     - name: Copy template prometheus.yml for Prometheus
       template:
@@ -60,12 +83,6 @@
         name: prometheus
         enabled: yes
         state: restarted
-
-    - name: Verify Grafana is running
-      command: systemctl status grafana-server
-      register: grafana_status
-      changed_when: false
-      failed_when: grafana_status.rc != 0
 
     - name: Verify Prometheus is running
       command: systemctl status prometheus
