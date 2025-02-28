@@ -24,4 +24,18 @@ datasources:
       tlsAuth: false
       tlsAuthWithCACert: false
     version: 1
-    editable: true   
+    editable: true
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: "http://localhost:3100"
+    isDefault: false
+    editable: true
+    jsonData:
+      httpMethod: GET
+      maxLines: 1000
+      tlsSkipVerify: false
+    secureJsonData:
+      tlsAuth: false
+      tlsAuthWithCACert: false

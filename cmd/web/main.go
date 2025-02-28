@@ -58,7 +58,7 @@ func main() {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel(cfg.logLevel)}))
 	if cfg.lokiPort != 0 {
-		logger = slogloki.NewLokiLogger(fmt.Sprintf("http://localhost:%d/loki/api/v1/push", cfg.lokiPort), logLevel(cfg.logLevel))
+		logger = slogloki.NewLokiLogger("bad-chess", fmt.Sprintf("http://localhost:%d/loki/api/v1/push", cfg.lokiPort), logLevel(cfg.logLevel))
 	}
 
 	templateCache, err := newTemplateCache()

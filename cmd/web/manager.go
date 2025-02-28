@@ -195,6 +195,7 @@ func (m *Manager) cleanupMatches() {
 			m.matchesMu.Lock()
 			for _, finishedMatch := range finishedMatches {
 				m.logger.Debug("removing match from manager", "match info", finishedMatch)
+
 				if match, ok := m.matches[finishedMatch.TimeControl][finishedMatch.ID]; ok {
 					match.MessagePlayers(Event{Type: EventMatchOver}, Light, Dark)
 
