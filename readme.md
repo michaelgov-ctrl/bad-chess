@@ -1,18 +1,22 @@
 # Welcome to bad-chess
 
+
+![image](https://github.com/user-attachments/assets/f72eabd9-30fb-439c-a907-fc16cac08fd9)
+
+
 At the moment only matchmaking is available, so the likelihood of finding an opponent is low....
 Games against an engine is the next goal.
+
+
+![let-me-in](https://github.com/user-attachments/assets/506cabe4-d0ae-4dc6-922b-b62d7e33d7d0)
+
+
 
 Authentication is needed under a not-so-secret-key to protect the websocket used for matches from being abused(for now).
 The key is WelcomeToBadChess
 
 
 ![image](https://github.com/user-attachments/assets/ff7f0197-8e42-4530-bc65-1337c8f8c305)
-
-
-
-![image](https://github.com/user-attachments/assets/f72eabd9-30fb-439c-a907-fc16cac08fd9)
-
 
 
 ## Why?
