@@ -1,0 +1,18 @@
+
+local.file_match "logs" {
+  path_targets = [
+    {__path__ = "/var/log/caddy/access*"},
+    {__path__ = "/var/log/fail2ban.log"},
+  ]
+}
+
+loki.source.file "logfiles" {
+  targets    = local.file_match.logs.targets
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://localhost:3100/loki/api/v1/push"
+  }
+}

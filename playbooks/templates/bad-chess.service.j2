@@ -17,7 +17,7 @@ User=bad-chess
 Group=bad-chess
 EnvironmentFile=/etc/environment
 WorkingDirectory=/home/bad-chess
-ExecStart={{ webserver_binary }} -port={{ webserver_port }}
+ExecStart={{ webserver_binary }} -port={{ webserver_port }} -log-level={{ log_level }} -loki-port={{ loki_port }}
 
 # Automatically restart the service after a 5-second wait if it exits with a non-zero 
 # exit code. If it restarts more than 5 times in 600 seconds, then the rate limit we

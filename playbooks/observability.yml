@@ -40,6 +40,11 @@
         name: loki
         state: present
 
+    - name: Install Alloy
+      apt:
+        name: alloy
+        state: present
+
     - name: Copy template datasources.yml for Grafana
       template:
         src: datasources.yml.j2
@@ -60,6 +65,11 @@
       ansible.builtin.copy:
         src: ./files/grafana-bad-chess.json
         dest: "{{ grafana_dashboard_provisioning_directory }}/grafana-bad-chess.json"
+
+    - name: Copy logs json dashboard
+      ansible.builtin.copy:
+        src: ./files/grafana-logs.json
+        dest: "{{ grafana_dashboard_provisioning_directory }}/grafana-logs.json"
 
     - name: Enable and start Grafana service
       systemd:
@@ -90,9 +100,31 @@
       changed_when: false
       failed_when: prometheus_status.rc != 0
 
+    - name: Enable and start Loki service
+      systemd:
+        name: loki
+        enabled: yes
+        state: restarted
+
     - name: Verify Loki is running
       command: systemctl status loki
       register: loki_status
       changed_when: false
       failed_when: loki_status.rc != 0
   
+    - name: Copy template config.alloy for Alloy
+      template:
+        src: config.alloy.j2
+        dest: /etc/alloy/config.alloy
+
+    - name: Enable and start Alloy service
+      systemd:
+        name: alloy
+        enabled: yes
+        state: restarted
+
+    - name: Verify Alloy is running
+      command: systemctl status alloy
+      register: alloy_status
+      changed_when: false
+      failed_when: alloy_status.rc != 0

@@ -8,6 +8,8 @@
     ansible_port: 65332
     webserver_binary: /home/bad-chess/bad-chess-server
     webserver_port: 8080
+    log_level: info
+    loki_port: 3100
   tasks:
     - name: Install required packages
       apt:
