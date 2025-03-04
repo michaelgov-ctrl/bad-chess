@@ -83,5 +83,6 @@ To visualize these metrics & logs at a glance there are three Grafana Dashboards
 
 
 ### Logs
-![image](https://github.com/user-attachments/assets/d9336dbf-02ac-4f52-9ee9-0ef20e308e79)
+![image](https://github.com/user-attachments/assets/e9e7adad-c6a4-422f-8e3e-2143596d4091)
+
 
