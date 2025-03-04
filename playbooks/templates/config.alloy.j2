@@ -1,7 +1,7 @@
 
 local.file_match "logs" {
   path_targets = [
-    {__path__ = "/var/log/caddy/access*"},
+    {__path__ = "/var/log/caddy/*.log"},
     {__path__ = "/var/log/fail2ban.log"},
   ]
 }
