@@ -67,4 +67,21 @@ I set out to build a chess-based website as a learning project to focus on JavaS
 
     browse to localhost:9999
 
-    
+## Observability:
+
+The basic observability stack is Alloy, Prometheus, Loki, & Grafana.
+Prometheus scrapes the bad-chess server that has been instrumented for Prometheus metrics and Node Exporter.
+Alloy scrapes logs for fail2ban & Caddy and ships them to Loki. The bad-chess server ships its own logs to Loki.
+To visualize these metrics & logs at a glance there are three Grafana Dashboards: bad-chess, Node Exporter Full, and Logs.
+
+### bad-chess
+![image](https://github.com/user-attachments/assets/4e0e3086-bf5d-4aaf-b17e-b534bfa2d48a)
+
+
+### Node Exporter Full
+![image](https://github.com/user-attachments/assets/27b1a2c5-ddb0-49c4-a756-0e307f015dd5)
+
+
+### Logs
+![image](https://github.com/user-attachments/assets/d9336dbf-02ac-4f52-9ee9-0ef20e308e79)
+
