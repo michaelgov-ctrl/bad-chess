@@ -117,6 +117,13 @@
         src: config.alloy.j2
         dest: /etc/alloy/config.alloy
 
+    - name: Ensure caddy group has read access to caddy logs
+      ansible.builtin.file:
+        path: "{{ item }}"
+        mode: '0660'
+      with_fileglob:
+        - "/var/log/caddy/*.log"
+
     - name: Add alloy user to caddy group to access caddy logs
       ansible.builtin.user:
         name: alloy
