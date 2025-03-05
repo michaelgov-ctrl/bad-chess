@@ -11,7 +11,30 @@ http://bad-chess.com {
                 }
         }
 
-        respond /metrics/* "Not Permitted" 403
+        @blocked {
+                path /metrics /wp-admin /wordpress
+        }
+        respond @blocked "Not Found" 404
+
+        reverse_proxy localhost:{{ webserver_port }} {
+                stream_timeout 24h
+                stream_close_delay 5m
+        }
+}
+
+https://bad-chess.com {
+        log {
+                output file /var/log/caddy/access.log {
+                        roll_size 10MB
+                        roll_keep 3
+                        roll_keep_days 14
+                }
+        }
+
+        @blocked {
+                path /metrics /wp-admin /wordpress
+        }
+        respond @blocked "Not Found" 404
 
         reverse_proxy localhost:{{ webserver_port }} {
                 stream_timeout 24h
