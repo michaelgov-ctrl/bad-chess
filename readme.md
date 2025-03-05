@@ -74,6 +74,10 @@ Prometheus scrapes the bad-chess server that has been instrumented for Prometheu
 Alloy scrapes logs for fail2ban & Caddy and ships them to Loki. The bad-chess server ships its own logs to Loki.
 To visualize these metrics & logs at a glance there are three Grafana Dashboards: bad-chess, Node Exporter Full, and Logs.
 
+
+![image](https://github.com/user-attachments/assets/6221b244-23bd-43e7-9e31-c32b410c405b)
+
+
 ### bad-chess
 ![image](https://github.com/user-attachments/assets/4e0e3086-bf5d-4aaf-b17e-b534bfa2d48a)
 
@@ -83,5 +87,6 @@ To visualize these metrics & logs at a glance there are three Grafana Dashboards
 
 
 ### Logs
-![image](https://github.com/user-attachments/assets/d9336dbf-02ac-4f52-9ee9-0ef20e308e79)
+![image](https://github.com/user-attachments/assets/e9e7adad-c6a4-422f-8e3e-2143596d4091)
+
 
