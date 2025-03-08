@@ -25,7 +25,7 @@ func (app *application) routes() http.Handler {
 
 	router.Handler(http.MethodGet, "/matchmaking", protected.ThenFunc(app.matchMakingHandler))
 	router.Handler(http.MethodGet, "/matches", protected.ThenFunc(app.matchesHandler))
-	router.Handler(http.MethodGet, "/matches/ws", protected.ThenFunc(app.gameManager.serveWS))
+	router.Handler(http.MethodGet, "/matches/ws", protected.ThenFunc(app.matchmakingManager.serveWS))
 
 	router.Handler(http.MethodGet, "/user/login", dynamic.ThenFunc(app.userLogin))
 	router.Handler(http.MethodPost, "/user/login", dynamic.ThenFunc(app.userLoginPost))

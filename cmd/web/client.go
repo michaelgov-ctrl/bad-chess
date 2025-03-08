@@ -14,9 +14,14 @@ var (
 	pingInterval = (pongWait * 9) / 10 // 90% of pongWait
 )
 
+type Manager interface {
+	removeClient(c *Client)
+	routeEvent(req Event, c *Client) error
+}
+
 type Client struct {
 	connection *websocket.Conn
-	manager    *Manager
+	manager    Manager
 
 	currentMatch ClientMatchInfo
 
@@ -32,7 +37,7 @@ type ClientMatchInfo struct {
 	Pieces      PieceColor  `json:"pieces"`
 }
 
-func NewClient(conn *websocket.Conn, manager *Manager) *Client {
+func NewClient(conn *websocket.Conn, manager Manager) *Client {
 	return &Client{
 		connection: conn,
 		manager:    manager,

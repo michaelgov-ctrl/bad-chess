@@ -29,14 +29,14 @@ type config struct {
 }
 
 type application struct {
-	config          config
-	authentication  *models.LazyAuth
-	gameManager     *Manager
-	sessionManager  *scs.SessionManager
-	templateCache   map[string]*template.Template
-	formDecoder     *form.Decoder
-	logger          *slog.Logger
-	metricsRegistry *prometheus.Registry
+	config             config
+	authentication     *models.LazyAuth
+	matchmakingManager *MatchmakingManager
+	sessionManager     *scs.SessionManager
+	templateCache      map[string]*template.Template
+	formDecoder        *form.Decoder
+	logger             *slog.Logger
+	metricsRegistry    *prometheus.Registry
 }
 
 func main() {
@@ -78,14 +78,14 @@ func main() {
 	)
 
 	app := &application{
-		config:          cfg,
-		authentication:  models.NewLazyAuth(),
-		gameManager:     NewManager(context.Background(), WithLogger(logger), WithMetricsRegistry(registry)),
-		sessionManager:  sessionManager,
-		templateCache:   templateCache,
-		formDecoder:     form.NewDecoder(),
-		logger:          logger,
-		metricsRegistry: registry,
+		config:             cfg,
+		authentication:     models.NewLazyAuth(),
+		matchmakingManager: NewMatchmakingManager(context.Background(), WithLogger(logger), WithMetricsRegistry(registry)),
+		sessionManager:     sessionManager,
+		templateCache:      templateCache,
+		formDecoder:        form.NewDecoder(),
+		logger:             logger,
+		metricsRegistry:    registry,
 	}
 
 	if err := app.serve(cfg.cert, cfg.key); err != nil {
