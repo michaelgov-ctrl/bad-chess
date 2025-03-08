@@ -12,25 +12,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 	"github.com/notnil/chess"
 	"github.com/prometheus/client_golang/prometheus"
-)
-
-var (
-	websocketUpgrader = websocket.Upgrader{
-		CheckOrigin:     checkOrigin,
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-	}
-
-	// TODO: update this for proxy
-	AllowedOrigins = []string{
-		"ws://localhost:8080",
-		"ws://localhost:8081",
-		"ws://localhost:8082",
-		"http://localhost:8080",
-	}
 )
 
 type MatchmakingManager struct {
@@ -43,37 +26,29 @@ type MatchmakingManager struct {
 
 	handlers map[string]EventHandler
 
-	logger  *slog.Logger
+	ManagerOptions
 	metrics *MatchmakingManagerMetrics
 }
 
-type MatchmakingManagerOptions func(*MatchmakingManager)
-
-func WithLogger(logger *slog.Logger) MatchmakingManagerOptions {
-	return func(m *MatchmakingManager) {
-		m.logger = logger
-	}
-}
-
-func WithMetricsRegistry(registry *prometheus.Registry) MatchmakingManagerOptions {
-	return func(m *MatchmakingManager) {
-		m.metrics.registry = registry
-	}
-}
-
-func NewMatchmakingManager(ctx context.Context, opts ...MatchmakingManagerOptions) *MatchmakingManager {
+func NewMatchmakingManager(ctx context.Context, opts ...ManagerOption) *MatchmakingManager {
 	m := &MatchmakingManager{
 		clients:          make(ClientList),
 		matches:          make(TimeControlMatchList),
 		matchCleanupChan: make(chan MatchOutcome),
 		handlers:         make(map[string]EventHandler),
-		logger:           slog.New(slog.NewTextHandler(os.Stdout, nil)),
 		metrics:          NewMatchmakingManagerMetrics(),
 	}
 
-	for _, opt := range opts {
-		opt(m)
+	defaults := &ManagerOptions{
+		logger:   slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		registry: prometheus.NewRegistry(),
 	}
+
+	for _, opt := range opts {
+		opt(defaults)
+	}
+
+	m.ManagerOptions = *defaults
 
 	m.metrics.totalClients = prometheus.NewCounter(
 		prometheus.CounterOpts{
@@ -103,7 +78,7 @@ func NewMatchmakingManager(ctx context.Context, opts ...MatchmakingManagerOption
 		},
 	)
 
-	m.metrics.registry.MustRegister(m.metrics.totalClients, m.metrics.currentClients, m.metrics.totalMatches, m.metrics.currentMatches)
+	m.registry.MustRegister(m.metrics.totalClients, m.metrics.currentClients, m.metrics.totalMatches, m.metrics.currentMatches)
 
 	m.registerSupportedTimeControls()
 	m.registerEventHandlers()
@@ -120,6 +95,9 @@ func (m *MatchmakingManager) registerEventHandlers() {
 }
 
 func (m *MatchmakingManager) registerSupportedTimeControls() {
+	m.matchesMu.Lock()
+	defer m.matchesMu.Unlock()
+
 	for tc := range SupportedTimeControls {
 		m.matches[tc] = make(MatchList)
 	}
@@ -356,7 +334,6 @@ func (m *MatchmakingManager) newMatch(timeControl TimeControl) MatchId {
 }
 
 type MatchmakingManagerMetrics struct {
-	registry       *prometheus.Registry
 	totalClients   prometheus.Counter
 	currentClients prometheus.Gauge
 	totalMatches   prometheus.Counter
@@ -364,9 +341,7 @@ type MatchmakingManagerMetrics struct {
 }
 
 func NewMatchmakingManagerMetrics() *MatchmakingManagerMetrics {
-	return &MatchmakingManagerMetrics{
-		registry: prometheus.NewRegistry(),
-	}
+	return &MatchmakingManagerMetrics{}
 }
 
 func (m *MatchmakingManager) updateMetrics() {

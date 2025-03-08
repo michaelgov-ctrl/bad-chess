@@ -1,0 +1,9 @@
+{{define "title"}}Choose an Engine ELO{{end}}
+
+{{define "main"}}
+    {{range .EngineELOs}}
+    <tr>
+        <a href='/engines?elo={{ . }}'><button>{{ . }}</button></a>
+    </tr>
+    {{end}}
+{{end}}

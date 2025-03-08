@@ -19,6 +19,14 @@ var (
 		TimeControl(20 * float64(time.Minute)): true, // 20 minutes
 	}
 
+	SupportedEngineELOs = map[ELO]bool{
+		600:  true,
+		1000: true,
+		1400: true,
+		1800: true,
+		2200: true,
+	}
+
 	ErrNonExistentPiece = errors.New("non-existent piece color")
 )
 
@@ -40,9 +48,13 @@ const (
 
 type TimeControl time.Duration
 
+type ELO = int
+
 type MatchList map[MatchId]*Match
 
 type TimeControlMatchList map[TimeControl]MatchList
+
+type ELOMatchList map[ELO]MatchList
 
 type Player struct {
 	Client *Client

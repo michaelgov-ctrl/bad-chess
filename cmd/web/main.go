@@ -31,6 +31,7 @@ type config struct {
 type application struct {
 	config             config
 	authentication     *models.LazyAuth
+	engineManager      *EngineManager
 	matchmakingManager *MatchmakingManager
 	sessionManager     *scs.SessionManager
 	templateCache      map[string]*template.Template
@@ -80,6 +81,7 @@ func main() {
 	app := &application{
 		config:             cfg,
 		authentication:     models.NewLazyAuth(),
+		engineManager:      NewEngineManager(context.Background(), WithLogger(logger), WithMetricsRegistry(registry)),
 		matchmakingManager: NewMatchmakingManager(context.Background(), WithLogger(logger), WithMetricsRegistry(registry)),
 		sessionManager:     sessionManager,
 		templateCache:      templateCache,

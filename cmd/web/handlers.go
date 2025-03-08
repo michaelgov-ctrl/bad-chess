@@ -11,6 +11,16 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	app.render(w, r, http.StatusOK, "home.tmpl.html", data)
 }
 
+func (app *application) engineSelectionHandler(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	app.render(w, r, http.StatusOK, "engineselection.tmpl.html", data)
+}
+
+func (app *application) enginesHandler(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	app.render(w, r, http.StatusOK, "engines.tmpl.html", data)
+}
+
 func (app *application) matchMakingHandler(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	app.render(w, r, http.StatusOK, "matchmaking.tmpl.html", data)

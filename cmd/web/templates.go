@@ -17,6 +17,7 @@ type templateData struct {
 	Flash           string
 	Form            any
 	TimeControls    []TimeControl
+	EngineELOs      []ELO
 }
 
 func (app *application) newTemplateData(r *http.Request) templateData {
@@ -25,6 +26,7 @@ func (app *application) newTemplateData(r *http.Request) templateData {
 		CSRFToken:       nosurf.Token(r),
 		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
 		TimeControls:    []TimeControl{},
+		EngineELOs:      []ELO{},
 	}
 
 	for k := range SupportedTimeControls {
@@ -33,6 +35,11 @@ func (app *application) newTemplateData(r *http.Request) templateData {
 	sort.Slice(td.TimeControls, func(i, j int) bool {
 		return td.TimeControls[i] < td.TimeControls[j]
 	})
+
+	for k := range SupportedEngineELOs {
+		td.EngineELOs = append(td.EngineELOs, k)
+	}
+	sort.Ints(td.EngineELOs)
 
 	return td
 }
