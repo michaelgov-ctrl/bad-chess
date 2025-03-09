@@ -1,4 +1,4 @@
-package main
+package game
 
 import (
 	"context"
@@ -99,7 +99,7 @@ func (m *EngineManager) removeClient(c *Client) {
 	}
 }
 
-func (m *EngineManager) serveWS(w http.ResponseWriter, r *http.Request) {
+func (m *EngineManager) ServeWS(w http.ResponseWriter, r *http.Request) {
 	m.logger.Info("new connection", "origin", r.RemoteAddr)
 
 	conn, err := websocketUpgrader.Upgrade(w, r, nil)

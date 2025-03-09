@@ -1,6 +1,10 @@
-package main
+package game
 
-import "github.com/gorilla/websocket"
+import (
+	"net/http"
+
+	"github.com/gorilla/websocket"
+)
 
 var (
 	websocketUpgrader = websocket.Upgrader{
@@ -17,3 +21,18 @@ var (
 		"http://localhost:8080",
 	}
 )
+
+// TODO: update this for proxy
+func checkOrigin(r *http.Request) bool {
+	return true
+	/*
+		origin := r.Header.Get("Origin")
+		for _, o := range AllowedOrigins {
+			if origin == o {
+				return true
+			}
+		}
+
+		return false
+	*/
+}

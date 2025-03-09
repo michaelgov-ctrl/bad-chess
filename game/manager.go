@@ -1,4 +1,4 @@
-package main
+package game
 
 import (
 	"log/slog"
@@ -8,7 +8,7 @@ import (
 )
 
 type Manager interface {
-	serveWS(w http.ResponseWriter, r *http.Request)
+	ServeWS(w http.ResponseWriter, r *http.Request)
 	addClient(c *Client)
 	removeClient(c *Client)
 	routeEvent(req Event, c *Client) error

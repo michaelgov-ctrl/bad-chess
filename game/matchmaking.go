@@ -1,4 +1,4 @@
-package main
+package game
 
 import (
 	"context"
@@ -127,7 +127,7 @@ func (m *MatchmakingManager) removeClient(c *Client) {
 	}
 }
 
-func (m *MatchmakingManager) serveWS(w http.ResponseWriter, r *http.Request) {
+func (m *MatchmakingManager) ServeWS(w http.ResponseWriter, r *http.Request) {
 	m.logger.Info("new connection", "origin", r.RemoteAddr)
 
 	conn, err := websocketUpgrader.Upgrade(w, r, nil)
@@ -193,21 +193,6 @@ func (m *MatchmakingManager) cleanupMatches() {
 			finishedMatches = nil
 		}
 	}
-}
-
-// TODO: update this for proxy
-func checkOrigin(r *http.Request) bool {
-	return true
-	/*
-		origin := r.Header.Get("Origin")
-		for _, o := range AllowedOrigins {
-			if origin == o {
-				return true
-			}
-		}
-
-		return false
-	*/
 }
 
 func (m *MatchmakingManager) matchMakingAddClientToMatch(c *Client) error {

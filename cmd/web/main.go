@@ -11,6 +11,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
+	"github.com/michaelgov-ctrl/bad-chess/game"
 	"github.com/michaelgov-ctrl/bad-chess/internal/models"
 	"github.com/michaelgov-ctrl/bad-chess/internal/slogloki"
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,8 +32,8 @@ type config struct {
 type application struct {
 	config             config
 	authentication     *models.LazyAuth
-	engineManager      *EngineManager
-	matchmakingManager *MatchmakingManager
+	engineManager      *game.EngineManager
+	matchmakingManager *game.MatchmakingManager
 	sessionManager     *scs.SessionManager
 	templateCache      map[string]*template.Template
 	formDecoder        *form.Decoder
@@ -81,8 +82,8 @@ func main() {
 	app := &application{
 		config:             cfg,
 		authentication:     models.NewLazyAuth(),
-		engineManager:      NewEngineManager(context.Background(), WithLogger(logger), WithMetricsRegistry(registry)),
-		matchmakingManager: NewMatchmakingManager(context.Background(), WithLogger(logger), WithMetricsRegistry(registry)),
+		engineManager:      game.NewEngineManager(context.Background(), game.WithLogger(logger), game.WithMetricsRegistry(registry)),
+		matchmakingManager: game.NewMatchmakingManager(context.Background(), game.WithLogger(logger), game.WithMetricsRegistry(registry)),
 		sessionManager:     sessionManager,
 		templateCache:      templateCache,
 		formDecoder:        form.NewDecoder(),

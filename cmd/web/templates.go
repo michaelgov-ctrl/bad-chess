@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"github.com/justinas/nosurf"
+	"github.com/michaelgov-ctrl/bad-chess/game"
 	"github.com/michaelgov-ctrl/bad-chess/ui"
 )
 
@@ -16,8 +17,8 @@ type templateData struct {
 	CSRFToken       string
 	Flash           string
 	Form            any
-	TimeControls    []TimeControl
-	EngineELOs      []ELO
+	TimeControls    []game.TimeControl
+	EngineELOs      []game.ELO
 }
 
 func (app *application) newTemplateData(r *http.Request) templateData {
@@ -25,18 +26,18 @@ func (app *application) newTemplateData(r *http.Request) templateData {
 		IsAuthenticated: app.isAuthenticated(r),
 		CSRFToken:       nosurf.Token(r),
 		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
-		TimeControls:    []TimeControl{},
-		EngineELOs:      []ELO{},
+		TimeControls:    []game.TimeControl{},
+		EngineELOs:      []game.ELO{},
 	}
 
-	for k := range SupportedTimeControls {
+	for k := range game.SupportedTimeControls {
 		td.TimeControls = append(td.TimeControls, k)
 	}
 	sort.Slice(td.TimeControls, func(i, j int) bool {
 		return td.TimeControls[i] < td.TimeControls[j]
 	})
 
-	for k := range SupportedEngineELOs {
+	for k := range game.SupportedEngineELOs {
 		td.EngineELOs = append(td.EngineELOs, k)
 	}
 	sort.Ints(td.EngineELOs)
