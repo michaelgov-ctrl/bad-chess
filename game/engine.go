@@ -163,11 +163,15 @@ func (m *EngineManager) engineMatchRequestHandler(event Event, c *Client) error 
 
 	match.messagePlayer(outgoingEvent)
 
-	if playerPieces != Light {
-		// TODO: Engine MOOOOOVEE
+	if err := match.Start(m.matchCleanupChan); err != nil {
+		return err
 	}
 
-	return match.Start(m.matchCleanupChan)
+	if playerPieces != Light {
+		return match.EngineMove()
+	}
+
+	return nil
 }
 
 func (m *EngineManager) parseMatchRequest(event Event) (NewEngineMatchEvent, error) {

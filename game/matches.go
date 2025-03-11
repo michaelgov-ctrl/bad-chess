@@ -437,6 +437,31 @@ func NewEngine(elo ELO) (*uci.Engine, error) {
 	return engine, nil
 }
 
+func (m *EngineMatch) EngineMove() error {
+	cmdPos := uci.CmdPosition{Position: m.Game.Position()}
+	cmdGo := uci.CmdGo{MoveTime: time.Second / 2}
+	if err := m.Engine.Run(cmdPos, cmdGo); err != nil {
+		return err
+	}
+
+	move := m.Engine.SearchResults().BestMove
+	if err := m.Game.Move(move); err != nil {
+		return err
+	}
+
+	outgoingEvent, err := NewOutgoingEvent(EventPropagatePosition, PropagatePositionEvent{
+		PlayerColor: OpponentPieceColor(m.PlayerPieces).String(),
+		FEN:         m.Game.FEN(),
+	})
+	if err != nil {
+		return err
+	}
+
+	m.messagePlayer(outgoingEvent)
+
+	return nil
+}
+
 func (m *EngineMatch) notifyIfStale(cleanupChan chan EngineMatchOutcome) {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	startTime, waitTime := time.Now(), (EngineMatchTimeControl.ToDuration()*2)+(30*time.Second) // max wait time is for each players clock with a 30 second buffer

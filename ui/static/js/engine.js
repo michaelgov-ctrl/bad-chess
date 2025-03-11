@@ -1,3 +1,10 @@
+document.addEventListener("DOMContentLoaded", function() {
+    var footerElement = document.getElementsByTagName("footer")[0];
+    if (footerElement) {
+        footerElement.innerHTML = "You're playing " + "<a href='https://github.com/official-stockfish/Stockfish' target='_blank'>Stockfish</a>";
+    }
+});
+
 const gameManager = new GameManager();
 
 const queryString = window.location.search;
