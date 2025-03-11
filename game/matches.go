@@ -517,7 +517,7 @@ OUTER:
 				outcome.Method = m.Game.Method().String()
 				break OUTER
 			}
-			if m.State != Started {
+			if m.Player.Client == nil {
 				outcome.Outcome = "abandoned"
 				break OUTER
 			}

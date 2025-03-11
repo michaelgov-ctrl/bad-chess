@@ -166,14 +166,14 @@ func (m *MatchmakingManager) cleanupMatches() {
 		select {
 		case matchInfo, ok := <-m.matchCleanupChan:
 			if !ok {
-				panic("MatchmakingManager match cleanup channel broken")
+				panic("Matchmaking Manager match cleanup channel broken")
 			}
 
 			finishedMatches = append(finishedMatches, matchInfo)
 		case <-cleanupTime.C:
 			m.matchesMu.Lock()
 			for _, finishedMatch := range finishedMatches {
-				m.logger.Debug("removing match from MatchmakingManager", "match info", finishedMatch)
+				m.logger.Debug("removing match from Matchmaking Manager", "match info", finishedMatch)
 
 				if match, ok := m.matches[finishedMatch.TimeControl][finishedMatch.ID]; ok {
 					match.MessagePlayers(Event{Type: EventMatchOver}, Light, Dark)

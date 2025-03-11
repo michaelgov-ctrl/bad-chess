@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/notnil/chess"
@@ -57,8 +58,8 @@ func NewEngineManager(ctx context.Context, opts ...ManagerOption) *EngineManager
 	m.registerSupportedEngineELOs()
 	m.registerEventHandlers()
 
+	go m.cleanupMatches()
 	/*
-		go m.cleanupMatches()
 		go m.updateMetrics()
 	*/
 
@@ -249,6 +250,40 @@ func (m *EngineManager) makeMoveHandler(event Event, c *Client) error {
 	// TODO: handle that
 
 	return match.EngineMove()
+}
+
+// From the context of games coming from the website it makes sense to close client connections here
+// TODO: it should be more graceful
+func (m *EngineManager) cleanupMatches() {
+	cleanupTime, finishedMatches := time.NewTicker(5*time.Second), []EngineMatchOutcome{}
+	for {
+		select {
+		case matchInfo, ok := <-m.matchCleanupChan:
+			if !ok {
+				panic("Engine Manager match cleanup channel broken")
+			}
+
+			finishedMatches = append(finishedMatches, matchInfo)
+		case <-cleanupTime.C:
+			m.matchesMu.Lock()
+			for _, finishedMatch := range finishedMatches {
+				m.logger.Debug("removing match from Engine Manager", "match info", finishedMatch)
+
+				if match, ok := m.matches[finishedMatch.ELO][finishedMatch.ID]; ok {
+					match.messagePlayer(Event{Type: EventMatchOver})
+
+					if match.Player != nil {
+						m.removeClient(match.Player.Client)
+					}
+				}
+
+				delete(m.matches[finishedMatch.ELO], finishedMatch.ID)
+			}
+			m.matchesMu.Unlock()
+
+			finishedMatches = nil
+		}
+	}
 }
 
 type EngineManagerMetrics struct {
