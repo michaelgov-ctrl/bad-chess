@@ -439,7 +439,7 @@ func NewEngine(elo ELO) (*uci.Engine, error) {
 
 func (m *EngineMatch) EngineMove() error {
 	cmdPos := uci.CmdPosition{Position: m.Game.Position()}
-	cmdGo := uci.CmdGo{MoveTime: time.Second / 2}
+	cmdGo := uci.CmdGo{MoveTime: time.Second}
 	if err := m.Engine.Run(cmdPos, cmdGo); err != nil {
 		return err
 	}
@@ -457,6 +457,30 @@ func (m *EngineMatch) EngineMove() error {
 		return err
 	}
 
+	m.Turn = m.PlayerPieces
+	m.messagePlayer(outgoingEvent)
+
+	return nil
+}
+
+func (m *EngineMatch) MakeMove(pieces PieceColor, move string) error {
+	if m.Turn != pieces {
+		return errors.New("not players turn")
+	}
+
+	if err := m.Game.MoveStr(move); err != nil {
+		return fmt.Errorf("invalid move: %w", err)
+	}
+
+	outgoingEvent, err := NewOutgoingEvent(EventPropagatePosition, PropagatePositionEvent{
+		PlayerColor: m.PlayerPieces.String(),
+		FEN:         m.Game.FEN(),
+	})
+	if err != nil {
+		return err
+	}
+
+	m.Turn = OpponentPieceColor(m.PlayerPieces)
 	m.messagePlayer(outgoingEvent)
 
 	return nil
@@ -537,6 +561,7 @@ func (m *EngineMatch) sendClockUpdates() {
 		}
 
 		evt := ClockUpdateEvent{
+			ClockOwner:    m.PlayerPieces.String(),
 			TimeRemaining: m.Player.Clock.TimeRemaining().String(),
 		}
 

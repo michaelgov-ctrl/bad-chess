@@ -233,13 +233,22 @@ func (m *EngineManager) makeMoveHandler(event Event, c *Client) error {
 	m.matchesMu.RLock()
 	defer m.matchesMu.RUnlock()
 
-	// TODO: MATCH
-	_, ok := m.matches[c.currentMatch.EngineELO][c.currentMatch.ID]
+	match, ok := m.matches[c.currentMatch.EngineELO][c.currentMatch.ID]
 	if !ok {
 		return errors.New("no match")
 	}
 
-	return nil
+	if err := match.MakeMove(c.currentMatch.Pieces, moveEvent.Move); err != nil {
+		return err
+	}
+
+	match.Player.Clock.Pause()
+	defer match.Player.Clock.Start()
+	// if engine move errors player clock will be started
+	// which is fine for now since the game state will be ruined if the engine move fails
+	// TODO: handle that
+
+	return match.EngineMove()
 }
 
 type EngineManagerMetrics struct {
