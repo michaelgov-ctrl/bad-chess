@@ -13,16 +13,17 @@ type Event struct {
 type EventHandler func(event Event, c *Client) error
 
 const (
-	EventAssignedMatch     = "assigned_match"
-	EventClockUpdate       = "clock_update"
-	EventJoinMatchRequest  = "join_match"
-	EventMakeMove          = "make_move"
-	EventMatchOver         = "match_over"
-	EventMatchStarted      = "match_started"
-	EventMatchError        = "match_error"
-	EventNewMatchRequest   = "new_match"
-	EventPropagateMove     = "propagate_move"
-	EventPropagatePosition = "propagate_position"
+	EventAssignedMatch         = "assigned_match"
+	EventClockUpdate           = "clock_update"
+	EventNewEngineMatchRequest = "new_engine_match"
+	EventJoinMatchRequest      = "join_match"
+	EventMakeMove              = "make_move"
+	EventMatchOver             = "match_over"
+	EventMatchStarted          = "match_started"
+	EventMatchError            = "match_error"
+	EventNewMatchRequest       = "new_match"
+	EventPropagateMove         = "propagate_move"
+	EventPropagatePosition     = "propagate_position"
 )
 
 type ClockUpdateEvent struct {
@@ -37,6 +38,10 @@ type JoinMatchEvent struct {
 type MakeMoveEvent struct {
 	Move string `json:"move"`
 	//Player string `json:"player"`
+}
+
+type NewEngineMatchEvent struct {
+	ELO ELO `json:"elo"`
 }
 
 type PropagateMoveEvent struct {

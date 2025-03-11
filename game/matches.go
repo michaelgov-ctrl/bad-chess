@@ -5,9 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/notnil/chess"
+	"github.com/notnil/chess/uci"
 )
 
 var (
@@ -54,7 +57,9 @@ type MatchList map[MatchId]*Match
 
 type TimeControlMatchList map[TimeControl]MatchList
 
-type ELOMatchList map[ELO]MatchList
+type EngineMatchList map[MatchId]*EngineMatch
+
+type ELOMatchList map[ELO]EngineMatchList
 
 type Player struct {
 	Client *Client
@@ -67,6 +72,13 @@ const (
 	Waiting MatchState = iota
 	Started
 	Over
+)
+
+type MatchType int
+
+const (
+	Engine MatchType = iota
+	Matchmaking
 )
 
 // TODO: Spectators  []*Client
@@ -392,4 +404,136 @@ func (m *Match) MessagePlayers(event Event, players ...PieceColor) {
 			}
 		}
 	}
+}
+
+const EngineMatchTimeControl = TimeControl(30 * time.Minute)
+
+type EngineMatch struct {
+	ID           MatchId
+	ELO          ELO
+	Engine       *uci.Engine
+	Player       *Player
+	PlayerPieces PieceColor
+	Game         *chess.Game
+	Turn         PieceColor
+	State        MatchState
+	Logger       *slog.Logger
+}
+
+func NewEngine(elo ELO) (*uci.Engine, error) {
+	engine, err := uci.New("stockfish.exe")
+	if err != nil {
+		return nil, err
+	}
+
+	err = engine.Run(uci.CmdUCI, uci.CmdIsReady,
+		uci.CmdSetOption{Name: "UCI_LimitStrength", Value: "true"},
+		uci.CmdSetOption{Name: "UCI_Elo", Value: strconv.Itoa(elo)},
+		uci.CmdUCINewGame)
+	if err != nil {
+		return nil, err
+	}
+
+	return engine, nil
+}
+
+func (m *EngineMatch) notifyIfStale(cleanupChan chan EngineMatchOutcome) {
+	ticker := time.NewTicker(500 * time.Millisecond)
+	startTime, waitTime := time.Now(), (EngineMatchTimeControl.ToDuration()*2)+(30*time.Second) // max wait time is for each players clock with a 30 second buffer
+
+	outcome := EngineMatchOutcome{
+		ID:      m.ID,
+		ELO:     m.ELO,
+		Outcome: "abandoned",
+	}
+
+	for range ticker.C {
+		if time.Since(startTime) >= waitTime && m.State != Over {
+			cleanupChan <- outcome
+			return
+		}
+	}
+}
+
+func (m *EngineMatch) notifyWhenOver(cleanupChan chan<- EngineMatchOutcome) {
+	var outcome = EngineMatchOutcome{ID: m.ID, ELO: m.ELO}
+
+	ticker := time.NewTicker(500 * time.Millisecond)
+OUTER:
+	for {
+		select {
+		case <-ticker.C:
+			if m.Game.Outcome() != chess.NoOutcome {
+				outcome.Outcome = m.Game.Outcome().String()
+				outcome.Method = m.Game.Method().String()
+				break OUTER
+			}
+			if m.State != Started {
+				outcome.Outcome = "abandoned"
+				break OUTER
+			}
+		case <-safePlayerClockChannel(m.Player):
+			outcome.Outcome = fmt.Sprintf("%s won", OpponentPieceColor(m.PlayerPieces))
+			outcome.Method = "flagged"
+			break OUTER
+		}
+	}
+
+	m.State = Over
+	cleanupChan <- outcome
+}
+
+func (m *EngineMatch) messagePlayer(event Event) {
+	if m.Player != nil && m.Player.Client != nil {
+		m.Player.Client.egress <- event
+	}
+}
+
+func (m *EngineMatch) Start(cleanupChan chan<- EngineMatchOutcome) error {
+	m.State = Started
+	m.messagePlayer(Event{Type: EventMatchStarted})
+
+	m.Player.Clock.Start()
+	go m.sendClockUpdates()
+	go m.notifyWhenOver(cleanupChan)
+
+	return nil
+}
+
+func (m *EngineMatch) sendClockUpdates() {
+	for m.State != Over {
+		time.Sleep(1 * time.Second)
+		if m.Player == nil {
+			return
+		}
+
+		if m.Turn != m.PlayerPieces {
+			continue
+		}
+
+		evt := ClockUpdateEvent{
+			TimeRemaining: m.Player.Clock.TimeRemaining().String(),
+		}
+
+		outgoingEvent, err := NewOutgoingEvent(EventClockUpdate, evt)
+		if err != nil {
+			return
+		}
+
+		m.messagePlayer(outgoingEvent)
+	}
+}
+
+type EngineMatchOutcome struct {
+	ID      MatchId
+	ELO     ELO
+	Outcome string
+	Method  string
+}
+
+func assignPlayerPieces() PieceColor {
+	if rand.Intn(2) == 1 {
+		return Dark
+	}
+	return Light
 }

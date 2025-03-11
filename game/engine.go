@@ -2,22 +2,27 @@ package game
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"sync"
 
+	"github.com/google/uuid"
+	"github.com/notnil/chess"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// TODO: Handle unsupported time controls & engine ELOs by returning error
 type EngineManager struct {
 	clients   ClientList
 	clientsMu sync.RWMutex
 
 	matches          ELOMatchList
 	matchesMu        sync.RWMutex
-	matchCleanupChan chan MatchOutcome
+	matchCleanupChan chan EngineMatchOutcome
 
 	handlers map[string]EventHandler
 
@@ -29,7 +34,7 @@ func NewEngineManager(ctx context.Context, opts ...ManagerOption) *EngineManager
 	m := &EngineManager{
 		clients:          make(ClientList),
 		matches:          make(ELOMatchList),
-		matchCleanupChan: make(chan MatchOutcome),
+		matchCleanupChan: make(chan EngineMatchOutcome),
 		handlers:         make(map[string]EventHandler),
 		metrics:          NewEngineManagerMetrics(),
 	}
@@ -61,10 +66,8 @@ func NewEngineManager(ctx context.Context, opts ...ManagerOption) *EngineManager
 }
 
 func (m *EngineManager) registerEventHandlers() {
-	/*
-		m.handlers[EventJoinMatchRequest] = m.EngineHandler
-		m.handlers[EventMakeMove] = m.MakeMoveHandler
-	*/
+	m.handlers[EventNewEngineMatchRequest] = m.engineMatchRequestHandler
+	m.handlers[EventMakeMove] = m.makeMoveHandler
 }
 
 func (m *EngineManager) registerSupportedEngineELOs() {
@@ -72,7 +75,7 @@ func (m *EngineManager) registerSupportedEngineELOs() {
 	defer m.matchesMu.Unlock()
 
 	for ee := range SupportedEngineELOs {
-		m.matches[ee] = make(MatchList)
+		m.matches[ee] = make(EngineMatchList)
 	}
 }
 
@@ -124,6 +127,112 @@ func (m *EngineManager) routeEvent(event Event, c *Client) error {
 
 	if err := handler(event, c); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (m *EngineManager) engineMatchRequestHandler(event Event, c *Client) error {
+	m.logger.Info("match making handler", "event", event, "client", *c)
+
+	newMatchEvent, err := m.parseMatchRequest(event)
+	if err != nil {
+		return err
+	}
+
+	m.matchesMu.RLock()
+	matchId := m.newMatchId(newMatchEvent.ELO)
+	m.matchesMu.RUnlock()
+
+	playerPieces := assignPlayerPieces()
+
+	match, err := m.newEngineMatch(matchId, newMatchEvent.ELO, c, playerPieces)
+	if err != nil {
+		return err
+	}
+
+	m.matchesMu.Lock()
+	m.matches[newMatchEvent.ELO][matchId] = match
+	m.matchesMu.Unlock()
+
+	c.currentMatch = NewClientMatchInfo(matchId, Engine, EngineMatchTimeControl, newMatchEvent.ELO, playerPieces)
+	outgoingEvent, err := NewOutgoingEvent(EventAssignedMatch, c.currentMatch)
+	if err != nil {
+		return err
+	}
+
+	match.messagePlayer(outgoingEvent)
+
+	if playerPieces != Light {
+		// TODO: Engine MOOOOOVEE
+	}
+
+	return match.Start(m.matchCleanupChan)
+}
+
+func (m *EngineManager) parseMatchRequest(event Event) (NewEngineMatchEvent, error) {
+	var newMatchEvent NewEngineMatchEvent
+	if err := json.Unmarshal(event.Payload, &newMatchEvent); err != nil {
+		return NewEngineMatchEvent{}, fmt.Errorf("bad payload in request: %w", err)
+	}
+
+	if _, ok := SupportedEngineELOs[newMatchEvent.ELO]; !ok {
+		return NewEngineMatchEvent{}, fmt.Errorf("unsupported engine ELO: %d", newMatchEvent.ELO)
+	}
+
+	return newMatchEvent, nil
+}
+
+func (m *EngineManager) newEngineMatch(matchId MatchId, elo ELO, c *Client, playerPieces PieceColor) (*EngineMatch, error) {
+	engine, err := NewEngine(elo)
+	if err != nil {
+		return nil, err
+	}
+
+	match := &EngineMatch{
+		ID:     matchId,
+		Engine: engine,
+		Player: &Player{
+			Client: c,
+			Clock:  NewClock(EngineMatchTimeControl),
+		},
+		PlayerPieces: playerPieces,
+		Game:         chess.NewGame(),
+		Turn:         Light,
+		State:        Waiting,
+		Logger:       m.logger,
+	}
+	go match.notifyIfStale(m.matchCleanupChan)
+
+	return match, nil
+}
+
+func (m *EngineManager) newMatchId(elo ELO) MatchId {
+	matchId := MatchId(uuid.NewString())
+
+	if _, ok := m.matches[elo][matchId]; ok {
+		m.logger.Error("uuid collision", "MatchId", matchId)
+		matchId = m.newMatchId(elo)
+	}
+
+	return matchId
+}
+
+func (m *EngineManager) makeMoveHandler(event Event, c *Client) error {
+	m.logger.Info("make move handler", "event", event, "client", *c)
+
+	var moveEvent MakeMoveEvent
+	if err := json.Unmarshal(event.Payload, &moveEvent); err != nil {
+		return fmt.Errorf("bad payload in request: %v", err)
+	}
+
+	m.matchesMu.RLock()
+	defer m.matchesMu.RUnlock()
+
+	// TODO: MATCH
+	_, ok := m.matches[c.currentMatch.EngineELO][c.currentMatch.ID]
+	if !ok {
+		return errors.New("no match")
 	}
 
 	return nil

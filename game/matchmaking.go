@@ -16,6 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// TODO: Handle unsupported time controls & engine ELOs by returning error
 type MatchmakingManager struct {
 	clients   ClientList
 	clientsMu sync.RWMutex
@@ -90,8 +91,8 @@ func NewMatchmakingManager(ctx context.Context, opts ...ManagerOption) *Matchmak
 
 // TODO: add a handler for joining with a valid match id
 func (m *MatchmakingManager) registerEventHandlers() {
-	m.handlers[EventJoinMatchRequest] = m.MatchMakingHandler
-	m.handlers[EventMakeMove] = m.MakeMoveHandler
+	m.handlers[EventJoinMatchRequest] = m.matchMakingHandler
+	m.handlers[EventMakeMove] = m.makeMoveHandler
 }
 
 func (m *MatchmakingManager) registerSupportedTimeControls() {
@@ -195,7 +196,7 @@ func (m *MatchmakingManager) cleanupMatches() {
 	}
 }
 
-func (m *MatchmakingManager) matchMakingAddClientToMatch(c *Client) error {
+func (m *MatchmakingManager) addClientToMatch(c *Client) error {
 	match := m.matches[c.currentMatch.TimeControl][c.currentMatch.ID]
 	outgoingEvent, err := NewOutgoingEvent(EventAssignedMatch, c.currentMatch)
 	if err != nil {
@@ -214,12 +215,16 @@ func (m *MatchmakingManager) matchMakingAddClientToMatch(c *Client) error {
 	return nil
 }
 
-func (m *MatchmakingManager) MatchMakingHandler(event Event, c *Client) error {
+func (m *MatchmakingManager) matchMakingHandler(event Event, c *Client) error {
 	m.logger.Info("match making handler", "event", event, "client", *c)
 
 	var joinEvent JoinMatchEvent
 	if err := json.Unmarshal(event.Payload, &joinEvent); err != nil {
 		return fmt.Errorf("bad payload in request: %v", err)
+	}
+
+	if _, ok := SupportedTimeControls[joinEvent.TimeControl]; !ok {
+		return fmt.Errorf("unsupported time control")
 	}
 
 	c.currentMatch.TimeControl = joinEvent.TimeControl
@@ -233,7 +238,7 @@ func (m *MatchmakingManager) MatchMakingHandler(event Event, c *Client) error {
 			m.matches[joinEvent.TimeControl][matchId].DarkPlayer = &Player{Client: c}
 			c.currentMatch.ID = matchId
 			c.currentMatch.Pieces = Dark
-			err := m.matchMakingAddClientToMatch(c)
+			err := m.addClientToMatch(c)
 			if err != nil {
 				return err
 			}
@@ -243,14 +248,18 @@ func (m *MatchmakingManager) MatchMakingHandler(event Event, c *Client) error {
 		}
 	}
 
-	m.metrics.totalMatches.Inc()
 	c.currentMatch.ID = m.newMatch(joinEvent.TimeControl)
 	c.currentMatch.Pieces = Light
-	err := m.matchMakingAddClientToMatch(c)
+
+	err := m.addClientToMatch(c)
+	if err == nil {
+		m.metrics.totalMatches.Inc()
+	}
+
 	return err
 }
 
-func (m *MatchmakingManager) MakeMoveHandler(event Event, c *Client) error {
+func (m *MatchmakingManager) makeMoveHandler(event Event, c *Client) error {
 	m.logger.Info("make move handler", "event", event, "client", *c)
 
 	var moveEvent MakeMoveEvent
@@ -260,34 +269,36 @@ func (m *MatchmakingManager) MakeMoveHandler(event Event, c *Client) error {
 
 	m.matchesMu.RLock()
 	defer m.matchesMu.RUnlock()
-	if match, ok := m.matches[c.currentMatch.TimeControl][c.currentMatch.ID]; ok {
-		clientPlayerColor := match.ClientPieceColor(c)
 
-		if !match.OpponentPresent(clientPlayerColor) {
-			return fmt.Errorf("no opponent present")
-		}
-
-		if clientPlayerColor == NoColor || clientPlayerColor != c.currentMatch.Pieces {
-			return fmt.Errorf("player pieces are borked")
-		}
-
-		if err := match.MakeMove(c.currentMatch.Pieces, moveEvent.Move); err != nil {
-			return err
-		}
-
-		outgoingEvent, err := NewOutgoingEvent(EventPropagatePosition, PropagatePositionEvent{
-			PlayerColor: clientPlayerColor.String(),
-			FEN:         match.Game.FEN(),
-		})
-		if err != nil {
-			return err
-		}
-
-		// egress is handled in (c *Client) writeMessages()
-		match.MessagePlayers(outgoingEvent, Dark, Light)
-	} else {
+	match, ok := m.matches[c.currentMatch.TimeControl][c.currentMatch.ID]
+	if !ok {
 		return errors.New("no match")
 	}
+
+	clientPlayerColor := match.ClientPieceColor(c)
+
+	if !match.OpponentPresent(clientPlayerColor) {
+		return fmt.Errorf("no opponent present")
+	}
+
+	if clientPlayerColor == NoColor || clientPlayerColor != c.currentMatch.Pieces {
+		return fmt.Errorf("player pieces are borked")
+	}
+
+	if err := match.MakeMove(c.currentMatch.Pieces, moveEvent.Move); err != nil {
+		return err
+	}
+
+	outgoingEvent, err := NewOutgoingEvent(EventPropagatePosition, PropagatePositionEvent{
+		PlayerColor: clientPlayerColor.String(),
+		FEN:         match.Game.FEN(),
+	})
+	if err != nil {
+		return err
+	}
+
+	// egress is handled in (c *Client) writeMessages()
+	match.MessagePlayers(outgoingEvent, Dark, Light)
 
 	return nil
 }
