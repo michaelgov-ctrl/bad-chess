@@ -488,7 +488,7 @@ func (m *EngineMatch) MakeMove(pieces PieceColor, move string) error {
 
 func (m *EngineMatch) notifyIfStale(cleanupChan chan EngineMatchOutcome) {
 	ticker := time.NewTicker(500 * time.Millisecond)
-	startTime, waitTime := time.Now(), (EngineMatchTimeControl.ToDuration()*2)+(30*time.Second) // max wait time is for each players clock with a 30 second buffer
+	startTime, waitTime := time.Now(), EngineMatchTimeControl.ToDuration()+time.Minute
 
 	outcome := EngineMatchOutcome{
 		ID:      m.ID,
