@@ -53,6 +53,24 @@
         name: caddy
         state: reloaded
 
+    - name: Get latest Stockfish release
+      get_url:
+        url: https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-ubuntu-x86-64-avx2.tar
+        dest: /tmp/
+
+    - name: Extract Stockfish
+      ansible.builtin.unarchive:
+        src: "/tmp/stockfish-ubuntu-x86-64-avx2.tar"
+        dest: /tmp/
+        remote_src: yes
+
+    - name: Move executable to /usr/local/bin
+      copy:
+        src: /tmp/stockfish/stockfish-ubuntu-x86-64-avx2
+        dest: /usr/local/bin/stockfish
+        mode: '0755'
+        remote_src: yes
+
     - name: Get the latest bad-chess release details
       uri:
         url: https://api.github.com/repos/michaelgov-ctrl/bad-chess/releases/latest

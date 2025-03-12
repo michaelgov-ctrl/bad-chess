@@ -421,7 +421,7 @@ type EngineMatch struct {
 }
 
 func NewEngine(elo ELO) (*uci.Engine, error) {
-	engine, err := uci.New("stockfish.exe")
+	engine, err := uci.New("stockfish")
 	if err != nil {
 		return nil, err
 	}

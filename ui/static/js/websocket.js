@@ -139,8 +139,7 @@ class GameManager {
     interuptMessage = null;
 
     connect(endpoint, connMsg) {
-        //this.socket = new WebSocket('wss://bad-chess.com/matches/ws');
-        this.socket = new WebSocket('ws://localhost:8080' + endpoint);
+        this.socket = new WebSocket('wss://bad-chess.com' + endpoint);
 
         this.socket.addEventListener('open', () => {
             console.log('ws conn opened');
