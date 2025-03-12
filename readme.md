@@ -1,11 +1,10 @@
 # Welcome to bad-chess
 
 
-![image](https://github.com/user-attachments/assets/f72eabd9-30fb-439c-a907-fc16cac08fd9)
+![image](https://github.com/user-attachments/assets/810f5ed2-caff-4b92-926c-eb2032217a71)
 
 
-At the moment only matchmaking is available, so the likelihood of finding an opponent is low....
-Games against an engine is the next goal.
+Please feel free to play an instance of [Stockfish](https://github.com/official-stockfish/Stockfish) or try to find a match in matchmaking. The Stockfish engine is licensed under GPL-3.0
 
 
 ![let-me-in](https://github.com/user-attachments/assets/506cabe4-d0ae-4dc6-922b-b62d7e33d7d0)
@@ -79,7 +78,7 @@ To visualize these metrics & logs at a glance there are three Grafana Dashboards
 
 
 ### bad-chess
-![image](https://github.com/user-attachments/assets/4e0e3086-bf5d-4aaf-b17e-b534bfa2d48a)
+![image](https://github.com/user-attachments/assets/37071088-ba39-468b-9562-562a5bc8451b)
 
 
 ### Node Exporter Full
