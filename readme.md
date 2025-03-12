@@ -4,7 +4,7 @@
 ![image](https://github.com/user-attachments/assets/810f5ed2-caff-4b92-926c-eb2032217a71)
 
 
-Please feel free to play an instance of [Stockfish](https://github.com/official-stockfish/Stockfish) or try to find a match in matchmaking.
+Please feel free to play an instance of [Stockfish](https://github.com/official-stockfish/Stockfish) or try to find a match in matchmaking. The Stockfish engine is licensed under GPL-3.0
 
 
 ![let-me-in](https://github.com/user-attachments/assets/506cabe4-d0ae-4dc6-922b-b62d7e33d7d0)
