@@ -37,7 +37,7 @@ func NewMatchmakingManager(ctx context.Context, opts ...ManagerOption) *Matchmak
 		matches:          make(TimeControlMatchList),
 		matchCleanupChan: make(chan MatchOutcome),
 		handlers:         make(map[string]EventHandler),
-		metrics:          NewMatchmakingManagerMetrics(),
+		metrics:          &MatchmakingManagerMetrics{},
 	}
 
 	defaults := &ManagerOptions{
@@ -51,40 +51,10 @@ func NewMatchmakingManager(ctx context.Context, opts ...ManagerOption) *Matchmak
 
 	m.ManagerOptions = *defaults
 
-	m.metrics.totalClients = prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "MatchmakingManager_clients_total",
-			Help: "Total number of clients the MatchmakingManager has handled",
-		},
-	)
-
-	m.metrics.currentClients = prometheus.NewGauge(
-		prometheus.GaugeOpts{
-			Name: "MatchmakingManager_clients_current",
-			Help: "Current number of connected clients",
-		},
-	)
-
-	m.metrics.totalMatches = prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "MatchmakingManager_matches_total",
-			Help: "Total number of matches the MatchmakingManager has handled",
-		},
-	)
-
-	m.metrics.currentMatches = prometheus.NewGauge(
-		prometheus.GaugeOpts{
-			Name: "MatchmakingManager_matches_current",
-			Help: "Current number of matches",
-		},
-	)
-
-	m.registry.MustRegister(m.metrics.totalClients, m.metrics.currentClients, m.metrics.totalMatches, m.metrics.currentMatches)
-
+	m.registerMatchmakingManagerMetrics()
 	m.registerSupportedTimeControls()
 	m.registerEventHandlers()
 	go m.cleanupMatches()
-	go m.updateMetrics()
 
 	return m
 }
@@ -336,8 +306,38 @@ type MatchmakingManagerMetrics struct {
 	currentMatches prometheus.Gauge
 }
 
-func NewMatchmakingManagerMetrics() *MatchmakingManagerMetrics {
-	return &MatchmakingManagerMetrics{}
+func (m *MatchmakingManager) registerMatchmakingManagerMetrics() {
+	m.metrics.totalClients = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "matchmaking_manager_clients_total",
+			Help: "Total number of clients the matchmaking manager has handled",
+		},
+	)
+
+	m.metrics.currentClients = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "matchmaking_manager_clients_current",
+			Help: "Current number of connected matchmaking clients",
+		},
+	)
+
+	m.metrics.totalMatches = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "matchmaking_manager_matches_total",
+			Help: "Total number of matches the matchmaking manager has handled",
+		},
+	)
+
+	m.metrics.currentMatches = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "matchmaking_manager_matches_current",
+			Help: "Current number of matchmaking matches",
+		},
+	)
+
+	m.registry.MustRegister(m.metrics.totalClients, m.metrics.currentClients, m.metrics.totalMatches, m.metrics.currentMatches)
+
+	go m.updateMetrics()
 }
 
 func (m *MatchmakingManager) updateMetrics() {

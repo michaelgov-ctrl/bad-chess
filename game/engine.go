@@ -37,7 +37,7 @@ func NewEngineManager(ctx context.Context, opts ...ManagerOption) *EngineManager
 		matches:          make(ELOMatchList),
 		matchCleanupChan: make(chan EngineMatchOutcome),
 		handlers:         make(map[string]EventHandler),
-		metrics:          NewEngineManagerMetrics(),
+		metrics:          &EngineManagerMetrics{},
 	}
 
 	defaults := &ManagerOptions{
@@ -51,17 +51,10 @@ func NewEngineManager(ctx context.Context, opts ...ManagerOption) *EngineManager
 
 	m.ManagerOptions = *defaults
 
-	/*
-		metrics go here
-	*/
-
+	m.registerMatchmakingManagerMetrics()
 	m.registerSupportedEngineELOs()
 	m.registerEventHandlers()
-
 	go m.cleanupMatches()
-	/*
-		go m.updateMetrics()
-	*/
 
 	return m
 }
@@ -287,8 +280,69 @@ func (m *EngineManager) cleanupMatches() {
 }
 
 type EngineManagerMetrics struct {
+	totalClients   prometheus.Counter
+	currentClients prometheus.Gauge
+	totalMatches   prometheus.Counter
+	currentMatches prometheus.Gauge
 }
 
-func NewEngineManagerMetrics() *EngineManagerMetrics {
-	return &EngineManagerMetrics{}
+func (m *EngineManager) registerMatchmakingManagerMetrics() {
+	m.metrics.totalClients = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "engine_manager_clients_total",
+			Help: "Total number of clients the engine manager has handled",
+		},
+	)
+
+	m.metrics.currentClients = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "engine_manager_clients_current",
+			Help: "Current number of connected engine clients",
+		},
+	)
+
+	m.metrics.totalMatches = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "engine_manager_matches_total",
+			Help: "Total number of matches the engine manager has handled",
+		},
+	)
+
+	m.metrics.currentMatches = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "engine_manager_matches_current",
+			Help: "Current number of engine matches",
+		},
+	)
+
+	m.registry.MustRegister(m.metrics.totalClients, m.metrics.currentClients, m.metrics.totalMatches, m.metrics.currentMatches)
+
+	go m.updateMetrics()
+}
+
+func (m *EngineManager) updateMetrics() {
+	for {
+		time.Sleep(5 * time.Second)
+		go m.updateCurrentClientsMetric()
+		go m.updateCurrentMatchesMetric()
+	}
+}
+
+func (m *EngineManager) updateCurrentClientsMetric() {
+	m.clientsMu.RLock()
+	defer m.clientsMu.RUnlock()
+
+	m.metrics.currentClients.Set(float64(len(m.clients)))
+}
+
+func (m *EngineManager) updateCurrentMatchesMetric() {
+	m.matchesMu.RLock()
+	defer m.matchesMu.RUnlock()
+
+	var sum int
+	for _, matchList := range m.matches {
+		sum += len(matchList)
+	}
+
+	m.metrics.currentMatches.Set(float64(sum))
 }

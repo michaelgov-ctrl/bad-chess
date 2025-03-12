@@ -426,10 +426,13 @@ func NewEngine(elo ELO) (*uci.Engine, error) {
 		return nil, err
 	}
 
-	err = engine.Run(uci.CmdUCI, uci.CmdIsReady,
+	err = engine.Run(
+		uci.CmdUCI,
+		uci.CmdIsReady,
 		uci.CmdSetOption{Name: "UCI_LimitStrength", Value: "true"},
 		uci.CmdSetOption{Name: "UCI_Elo", Value: strconv.Itoa(elo)},
-		uci.CmdUCINewGame)
+		uci.CmdUCINewGame,
+	)
 	if err != nil {
 		return nil, err
 	}
