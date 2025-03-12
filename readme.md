@@ -79,7 +79,7 @@ To visualize these metrics & logs at a glance there are three Grafana Dashboards
 
 
 ### bad-chess
-![image](https://github.com/user-attachments/assets/4e0e3086-bf5d-4aaf-b17e-b534bfa2d48a)
+![image](https://github.com/user-attachments/assets/37071088-ba39-468b-9562-562a5bc8451b)
 
 
 ### Node Exporter Full
